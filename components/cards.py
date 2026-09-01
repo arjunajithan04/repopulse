@@ -15,8 +15,8 @@ def metric_card(title: str, value: str, delta: str | None = None, help_text: str
         <div class="metric-card">
             <div class="metric-label">{title}</div>
             <div class="metric-value">{value}</div>
-            <div class="metric-delta {delta_class}">{delta}</div>
-            <div class="metric-help">{help_text}</div>
+            <div class="metric-delta {delta_class}">{delta or '—'}</div>
+            <div class="metric-help">{help_text or 'No additional detail'}</div>
         </div>
         """,
         unsafe_allow_html=True,

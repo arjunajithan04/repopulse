@@ -11,7 +11,7 @@ st.set_page_config(
     page_title="GHAnalyst",
     page_icon="📊",
     layout="wide",
-    initial_sidebar_state="collapsed",
+    initial_sidebar_state="expanded",
 )
 
 st.markdown(
@@ -19,42 +19,61 @@ st.markdown(
     <style>
         :root {
             --bg: #0b1020;
-            --panel: #121a2b;
-            --panel-strong: #1a2338;
-            --panel-soft: #1f2937;
-            --primary: #7c3aed;
-            --primary-2: #22c55e;
-            --accent: #38bdf8;
+            --panel: #111827;
+            --panel-strong: #172033;
+            --panel-soft: #1d2940;
+            --primary: #8b5cf6;
+            --primary-2: #3b82f6;
+            --accent: #22c55e;
+            --warning: #f59e0b;
+            --danger: #f87171;
             --text: #e5e7eb;
             --muted: #a5b4cf;
-            --border: rgba(148, 163, 184, 0.18);
-            --success: #34d399;
-            --warning: #fbbf24;
-            --danger: #f87171;
+            --border: rgba(148, 163, 184, 0.16);
         }
 
         html, body, [data-testid="stAppViewContainer"], [data-testid="stApp"] {
-            background: linear-gradient(135deg, #0b1020 0%, #111827 42%, #0f172a 100%);
+            background: linear-gradient(135deg, #07101d 0%, #0f172a 30%, #111827 100%);
             color: var(--text);
         }
 
-        [data-testid="stHeader"] {
-            background: rgba(15, 23, 42, 0.7);
-            backdrop-filter: blur(12px);
+        [data-testid="stSidebar"] {
+            background: linear-gradient(180deg, rgba(15, 23, 42, 0.96), rgba(17, 24, 39, 0.96));
+            border-right: 1px solid var(--border);
+        }
+
+        [data-testid="stSidebarContent"] {
+            padding: 1rem 0.8rem;
+        }
+
+        .sidebar-header {
+            font-size: 1.5rem;
+            font-weight: 800;
+            letter-spacing: -0.04em;
+            margin: 0.4rem 0 1rem 0.3rem;
+            color: white;
+        }
+
+        .sidebar-subtitle {
+            color: var(--muted);
+            font-size: 0.75rem;
+            margin: 0 0 1rem 0.3rem;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
         }
 
         .main .block-container {
-            padding-top: 2rem;
+            padding-top: 1.5rem;
             padding-bottom: 3rem;
         }
 
         .hero-card {
-            background: linear-gradient(135deg, rgba(124, 58, 237, 0.22), rgba(56, 189, 248, 0.12));
-            border: 1px solid var(--border);
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.24), rgba(59, 130, 246, 0.14));
             border-radius: 22px;
-            padding: 1.3rem 1.5rem;
+            border: 1px solid var(--border);
+            padding: 1.4rem 1.5rem;
             margin-bottom: 1.2rem;
-            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.25);
+            box-shadow: 0 18px 40px rgba(15, 23, 42, 0.28);
         }
 
         .hero-title {
@@ -62,79 +81,75 @@ st.markdown(
             font-weight: 800;
             letter-spacing: -0.04em;
             margin: 0;
+            color: white;
         }
 
         .hero-subtitle {
+            margin-top: 0.5rem;
             color: var(--muted);
-            margin-top: 0.4rem;
-            font-size: 1rem;
+            font-size: 0.98rem;
+        }
+
+        .stRadio > div {
+            gap: 0.45rem;
+        }
+
+        .stRadio [role="radio"] {
+            border-radius: 12px;
+            padding: 0.6rem 0.75rem;
+            background: transparent;
+            border: 1px solid transparent;
+            color: var(--muted);
+        }
+
+        .stRadio [role="radio"][aria-checked="true"] {
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.18), rgba(59, 130, 246, 0.14));
+            border: 1px solid rgba(139, 92, 246, 0.45);
+            color: white;
         }
 
         .metric-card {
-            background: linear-gradient(180deg, rgba(17, 24, 39, 0.9), rgba(17, 24, 39, 0.8));
+            background: linear-gradient(180deg, rgba(17, 24, 39, 0.95), rgba(17, 24, 39, 0.86));
             border: 1px solid var(--border);
             border-radius: 18px;
+            min-height: 150px;
             padding: 1rem 1.1rem;
-            min-height: 140px;
-            box-shadow: 0 8px 24px rgba(15, 23, 42, 0.18);
+            box-shadow: 0 16px 30px rgba(15, 23, 42, 0.2);
         }
 
         .metric-label {
             color: var(--muted);
-            font-size: 0.8rem;
             text-transform: uppercase;
-            letter-spacing: 0.08em;
-            margin-bottom: 0.7rem;
+            letter-spacing: 0.12em;
+            font-size: 0.72rem;
+            margin-bottom: 0.75rem;
         }
 
         .metric-value {
             font-size: 2rem;
             font-weight: 800;
-            line-height: 1.1;
             color: white;
+            line-height: 1.1;
         }
 
         .metric-delta {
-            margin-top: 0.4rem;
-            font-size: 0.82rem;
-            font-weight: 600;
+            font-size: 0.8rem;
+            font-weight: 700;
+            margin-top: 0.45rem;
         }
 
-        .metric-delta.good { color: var(--success); }
-        .metric-delta.bad { color: var(--danger); }
-        .metric-delta.neutral { color: var(--accent); }
+        .metric-delta.good { color: #34d399; }
+        .metric-delta.bad { color: #f87171; }
+        .metric-delta.neutral { color: #60a5fa; }
 
         .metric-help {
-            font-size: 0.8rem;
+            margin-top: 0.45rem;
+            font-size: 0.78rem;
             color: var(--muted);
-            margin-top: 0.35rem;
-        }
-
-        div[data-testid="stTabs"] {
-            background: rgba(15, 23, 42, 0.5);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 0.2rem 0.4rem 0;
-            margin-bottom: 1.2rem;
-        }
-
-        button[kind="tab"] {
-            background: transparent;
-            border: none;
-            border-radius: 12px 12px 0 0;
-            color: var(--muted);
-            font-weight: 600;
-            padding: 0.75rem 1rem;
-        }
-
-        button[kind="tab"][aria-selected="true"] {
-            background: linear-gradient(135deg, rgba(124, 58, 237, 0.22), rgba(56, 189, 248, 0.18));
-            border: 1px solid rgba(124, 58, 237, 0.4);
-            color: white;
         }
 
         .stDataFrame, .stTable {
-            border-radius: 16px;
+            border-radius: 14px;
             overflow: hidden;
         }
 
@@ -143,7 +158,7 @@ st.markdown(
         }
 
         .stButton > button {
-            background: linear-gradient(135deg, var(--primary), #4f46e5);
+            background: linear-gradient(135deg, #8b5cf6, #3b82f6);
             color: white;
             border: none;
             border-radius: 12px;
@@ -151,23 +166,17 @@ st.markdown(
             padding: 0.7rem 1.1rem;
         }
 
-        .stButton > button:hover {
-            filter: brightness(1.08);
-        }
-
         .stTextInput > div > div > input,
-        .stSelectbox > div > div > div,
-        .stNumberInput > div > div > input {
+        .stSelectbox > div > div > div {
             background: rgba(15, 23, 42, 0.8);
-            color: var(--text);
             border: 1px solid var(--border);
             border-radius: 10px;
+            color: var(--text);
         }
     </style>
     """,
     unsafe_allow_html=True,
 )
-
 
 pages = {
     "Dashboard": dashboard_page,
@@ -176,19 +185,19 @@ pages = {
     "Code Insights": code_insights_page,
 }
 
+with st.sidebar:
+    st.markdown('<div class="sidebar-header">GHAnalyst</div>', unsafe_allow_html=True)
+    st.markdown('<div class="sidebar-subtitle">GitHub intelligence</div>', unsafe_allow_html=True)
+    selected_page = st.radio("", list(pages.keys()), index=0)
 
 st.markdown(
     """
     <div class="hero-card">
-        <p class="hero-title">GHAnalyst</p>
-        <div class="hero-subtitle">AI-driven GitHub repository intelligence and engineering insights</div>
+        <div class="hero-title">Repository intelligence dashboard</div>
+        <div class="hero-subtitle">Monitor repo health, contributor momentum, and code quality in one place.</div>
     </div>
     """,
     unsafe_allow_html=True,
 )
 
-
-tabs = st.tabs(list(pages.keys()))
-for tab, (name, page_fn) in zip(tabs, pages.items()):
-    with tab:
-        page_fn()
+pages[selected_page]()

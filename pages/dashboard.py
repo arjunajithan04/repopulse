@@ -7,7 +7,7 @@ from components.charts import render_bar_chart
 
 
 def dashboard_page():
-    st.subheader("Repository dashboard", divider="violet")
+    st.subheader("Executive overview", divider="violet")
 
     col1, col2, col3, col4 = st.columns(4)
     with col1:
@@ -26,12 +26,12 @@ def dashboard_page():
     with col_left:
         st.markdown("### Highlights")
         st.markdown(
-            "- Strong adoption and community engagement\n"
-            "- Stable issue trend with declining backlog\n"
-            "- High code health score and contributor momentum"
+            "- Strong community traction and adoption\n"
+            "- Stable issue resolution trend\n"
+            "- Consistent contributor velocity"
         )
     with col_right:
         st.markdown("### Trend note")
         st.markdown(
-            "The repo continues to show healthy growth in stars and forks while maintaining a balanced issue profile."
+            "The repository is showing healthy growth in stars and forks while keeping issue pressure manageable."
         )
