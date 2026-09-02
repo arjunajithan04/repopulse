@@ -11,7 +11,7 @@ st.set_page_config(
     page_title="RepoPulse - GitHub Repository Intelligence",
     page_icon="repopulse/assets/repo-icon.png",
     layout="wide",
-    initial_sidebar_state="expanded",
+    initial_sidebar_state="collapsed",
 )
 
 st.markdown(
@@ -54,26 +54,79 @@ st.markdown(
             background: rgba(10, 13, 18, 0.96);
             border-right: 1px solid var(--line);
             box-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.02);
+            width: 78px !important;
+            min-width: 78px !important;
+            max-width: 78px !important;
+            transition: width 0.25s ease, min-width 0.25s ease, max-width 0.25s ease;
+            overflow: hidden;
+        }
+
+        [data-testid="stSidebar"]:hover {
+            width: 290px !important;
+            min-width: 290px !important;
+            max-width: 290px !important;
+        }
+
+        [data-testid="stSidebar"]:hover .sidebar-header,
+        [data-testid="stSidebar"]:hover .sidebar-subtitle {
+            opacity: 1;
         }
 
         [data-testid="stSidebarContent"] {
-            padding: 1rem 0.8rem;
+            padding: 1rem 0.7rem;
+            opacity: 0.9;
+            transition: opacity 0.18s ease;
+        }
+
+        .stRadio > div {
+            gap: 0.45rem;
+            margin-top: 0.2rem;
+        }
+
+        .stRadio [role="radio"] {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            min-height: 42px;
+            border-radius: 12px;
+            padding: 0.55rem 0.6rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .stRadio [role="radio"] > div {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.7rem;
+            min-width: 0;
+        }
+
+        .stRadio [role="radio"] > div > span {
+            display: inline-block;
+            min-width: 1.2rem;
+            text-align: center;
         }
 
         .sidebar-header {
-            font-size: 1.52rem;
+            font-size: 1.24rem;
             font-weight: 700;
             letter-spacing: -0.06em;
             margin: 0.25rem 0 0.2rem 0.3rem;
             color: var(--text);
+            opacity: 0.7;
+            transition: opacity 0.2s ease;
         }
 
         .sidebar-subtitle {
             color: var(--muted);
-            font-size: 0.72rem;
-            letter-spacing: 0.14em;
+            font-size: 0.68rem;
+            letter-spacing: 0.12em;
             text-transform: uppercase;
             margin: 0 0 1.1rem 0.3rem;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+            white-space: nowrap;
         }
 
         .main .block-container {
@@ -266,9 +319,22 @@ pages = {
 }
 
 with st.sidebar:
-    st.markdown('<div class="sidebar-header">RepoPulse</div>', unsafe_allow_html=True)
-    st.markdown('<div class="sidebar-subtitle">GitHub Repository Intelligence</div>', unsafe_allow_html=True)
-    selected_page = st.radio("", list(pages.keys()), index=0)
+    st.markdown('<div class="sidebar-header">RP</div>', unsafe_allow_html=True)
+    st.markdown('<div class="sidebar-subtitle">GitHub Intelligence</div>', unsafe_allow_html=True)
+    selected_page = st.radio(
+        "",
+        ["📊 Dashboard", "📁 Repository", "👥 Contributors", "🧠 Code Insights"],
+        index=0,
+        horizontal=False,
+    )
+
+    page_map = {
+        "📊 Dashboard": "Dashboard",
+        "📁 Repository": "Repository",
+        "👥 Contributors": "Contributors",
+        "🧠 Code Insights": "Code Insights",
+    }
+    selected_page = page_map[selected_page]
 
 st.markdown(
     """
