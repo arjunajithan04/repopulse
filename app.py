@@ -366,7 +366,7 @@ with st.sidebar:
         horizontal=False,
         label_visibility="collapsed",
     )
-    selected_page = icon_page_map[selected_icon]
+    selected_page = icon_page_map.get(selected_icon or "📊", "Dashboard")
 
 st.markdown(
     """
