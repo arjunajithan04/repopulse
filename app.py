@@ -258,12 +258,12 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# pages = {
-#     "Dashboard": dashboard_page,
-#     "Repository": repository_page,
-#     "Contributors": contributors_page,
-#     "Code Insights": code_insights_page,
-# }
+pages = {
+    "Dashboard": dashboard_page,
+    "Repository": repository_page,
+    "Contributors": contributors_page,
+    "Code Insights": code_insights_page,
+}
 
 with st.sidebar:
     st.markdown('<div class="sidebar-header">RepoPulse</div>', unsafe_allow_html=True)
