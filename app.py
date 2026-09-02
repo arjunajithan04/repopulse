@@ -8,7 +8,7 @@ from pages.code_insights import code_insights_page
 
 
 st.set_page_config(
-    page_title="RepoPulse - GitHub Repository Intelligence",
+    page_title="RepoPulse",
     page_icon="assets/repo-icon.png",
     layout="wide",
     initial_sidebar_state="expanded",
