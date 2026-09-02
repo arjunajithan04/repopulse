@@ -9,7 +9,7 @@ from pages.code_insights import code_insights_page
 
 st.set_page_config(
     page_title="RepoPulse",
-    page_icon="assets/repo-icon.png",
+    page_icon="assets/final-icon.png",
     layout="wide",
     initial_sidebar_state="expanded",
 )
