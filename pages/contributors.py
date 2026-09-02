@@ -6,34 +6,29 @@ import streamlit as st
 def contributors_page():
     st.subheader("Contributor intelligence", divider="green")
 
-    contributors = [
-        {
-            "name": "Alice Nguyen",
-            "role": "Frontend lead",
-            "commits": 142,
-            "prs": 22,
-            "reviews": 18,
-            "avatar": "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=200&q=80",
-        },
-        {
-            "name": "Bob Patel",
-            "role": "Platform engineer",
-            "commits": 98,
-            "prs": 19,
-            "reviews": 12,
-            "avatar": "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=200&q=80",
-        },
-        {
-            "name": "Charlie Ross",
-            "role": "DevOps",
-            "commits": 76,
-            "prs": 11,
-            "reviews": 20,
-            "avatar": "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=200&q=80",
-        },
-    ]
+    analysis = st.session_state.get("repo_analysis")
+    if analysis is None:
+        st.info("Analyze a repository from the Repository page to populate contributor insights.")
+        return
 
-    cols = st.columns(len(contributors))
+    contributors = []
+    for contributor in analysis.contributors:
+        contributors.append(
+            {
+                "name": contributor.login,
+                "role": "Contributor",
+                "commits": contributor.commits,
+                "prs": contributor.pull_requests,
+                "reviews": contributor.issues,
+                "avatar": contributor.avatar_url or "https://ui-avatars.com/api/?name=" + contributor.login,
+            }
+        )
+
+    if not contributors:
+        st.info("No contributor data was returned for this repository.")
+        return
+
+    cols = st.columns(min(len(contributors), 4))
     for col, person in zip(cols, contributors):
         with col:
             st.markdown(
@@ -52,7 +47,8 @@ def contributors_page():
 
     st.markdown("### Contributor summary")
     st.markdown(
-        "- Top contributor momentum remains strong\n"
-        "- Review coverage is balanced across the team\n"
-        "- Commit flow indicates healthy engineering discipline"
+        f"- Total contributors: {analysis.metrics.get('total_contributors', len(contributors))}\n"
+        f"- Top contributor: {analysis.metrics.get('top_contributor', 'N/A')}\n"
+        f"- Combined contributions: {analysis.metrics.get('total_contributions', 0)}\n"
+        f"- Current repo: {analysis.repository.full_name or analysis.repository.name}"
     )
