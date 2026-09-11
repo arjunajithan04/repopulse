@@ -17,8 +17,7 @@ def _connect() -> sqlite3.Connection:
 
 def init_db() -> None:
     with _connect() as conn:
-        conn.execute(
-            """
+        conn.execute("""
             CREATE TABLE IF NOT EXISTS repository_snapshots (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 full_name TEXT NOT NULL,
@@ -32,49 +31,31 @@ def init_db() -> None:
                 health_score REAL DEFAULT 0,
                 health_dimensions TEXT DEFAULT '{}'
             )
-            """
-        )
-        conn.execute(
-            "CREATE INDEX IF NOT EXISTS idx_snapshots_repo_time ON repository_snapshots(full_name, captured_at)"
-        )
+        """)
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_snapshots_repo_time ON repository_snapshots(full_name, captured_at)")
 
 
 def save_snapshot(snapshot: dict[str, Any]) -> None:
     init_db()
     with _connect() as conn:
-        conn.execute(
-            """
+        conn.execute("""
             INSERT INTO repository_snapshots
-            (full_name, captured_at, stars, forks, open_issues,
-             open_pull_requests, contributors, recent_commits,
-             health_score, health_dimensions)
+            (full_name, captured_at, stars, forks, open_issues, open_pull_requests,
+             contributors, recent_commits, health_score, health_dimensions)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """,
-            (
-                snapshot.get("full_name", ""),
-                snapshot.get("timestamp", ""),
-                snapshot.get("stars", 0),
-                snapshot.get("forks", 0),
-                snapshot.get("issues", 0),
-                snapshot.get("pull_requests", 0),
-                snapshot.get("contributors", 0),
-                snapshot.get("commits", 0),
-                snapshot.get("health", 0),
-                json.dumps(snapshot.get("health_dimensions", {})),
-            ),
-        )
+        """, (
+            snapshot.get("full_name", ""), snapshot.get("timestamp", ""), snapshot.get("stars", 0), snapshot.get("forks", 0),
+            snapshot.get("issues", 0), snapshot.get("pull_requests", 0),
+            snapshot.get("contributors", 0), snapshot.get("commits", 0), snapshot.get("health", 0),
+            json.dumps(snapshot.get("health_dimensions", {})),
+        ))
 
 
 def get_snapshots(full_name: str, limit: int = 30) -> list[dict[str, Any]]:
     init_db()
     with _connect() as conn:
         rows = conn.execute(
-            """
-            SELECT * FROM repository_snapshots
-            WHERE lower(full_name) = lower(?)
-            ORDER BY captured_at DESC, id DESC
-            LIMIT ?
-            """,
+            "SELECT * FROM repository_snapshots WHERE lower(full_name) = lower(?) ORDER BY captured_at DESC, id DESC LIMIT ?",
             (full_name, limit),
         ).fetchall()
     results = []

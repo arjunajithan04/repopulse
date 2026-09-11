@@ -157,6 +157,29 @@ st.markdown(
         }
         .insight-title { font-weight: 700; margin-bottom: .35rem; }
         .insight-text { color: var(--muted); font-size: .88rem; line-height: 1.5; }
+        .metric-card {
+            background: linear-gradient(180deg, rgba(18,23,30,.95), rgba(12,16,22,.92));
+            border: 1px solid var(--line);
+            border-radius: 16px;
+            padding: 1rem;
+            min-height: 132px;
+            box-shadow: var(--shadow);
+            transition: transform .2s ease, border-color .2s ease, background .2s ease;
+        }
+        .metric-card:hover { transform: translateY(-2px); border-color: rgba(139,92,246,.35); }
+        .metric-label { color: var(--muted); font-size: .76rem; text-transform: uppercase; letter-spacing: .08em; }
+        .metric-value { font-size: 1.7rem; font-weight: 760; letter-spacing: -.04em; margin-top: .3rem; }
+        .metric-delta { font-size: .78rem; font-weight: 700; margin-top: .25rem; }
+        .metric-delta.good { color: var(--success); }
+        .metric-delta.bad { color: var(--danger); }
+        .metric-delta.neutral { color: var(--muted); }
+        .metric-help { color: var(--muted); font-size: .7rem; margin-top: .55rem; }
+        .status-badge { display:inline-block; padding:.32rem .65rem; border-radius:999px; font-size:.68rem; font-weight:800; letter-spacing:.08em; border:1px solid var(--line); margin-bottom:.45rem; }
+        .status-badge.good { color: var(--success); background: rgba(52,211,153,.09); border-color: rgba(52,211,153,.28); }
+        .status-badge.warning { color: var(--warning); background: rgba(251,191,36,.09); border-color: rgba(251,191,36,.28); }
+        .status-badge.danger { color: var(--danger); background: rgba(248,113,113,.09); border-color: rgba(248,113,113,.28); }
+        .status-badge.neutral { color: var(--muted); background: rgba(255,255,255,.04); }
+        .risk-row { padding:.65rem .8rem; margin:.4rem 0; border:1px solid rgba(248,113,113,.16); background:rgba(248,113,113,.05); border-radius:10px; color:#f5f7fb; }
         .score-pill {
             display: inline-block;
             padding: .28rem .6rem;
@@ -207,6 +230,10 @@ def _init_state():
         "repo_session_history": [],
         "repo_snapshots": {},
         "comparison_result": None,
+        "previous_snapshot": None,
+        "api_rate_limit": None,
+        "last_refresh": None,
+        "auto_refresh": False,
     }
     for key, value in defaults.items():
         if key not in st.session_state:
@@ -241,12 +268,21 @@ with st.sidebar:
         st.caption("ACTIVE REPOSITORY")
         st.markdown(f"**{st.session_state.current_repo}**")
     st.caption(f"Analyses this session: {st.session_state.repo_session_count}/10")
+    if st.session_state.get("last_refresh"):
+        st.caption(f"Last scan: {st.session_state.last_refresh}")
 
+current_repo = st.session_state.get("current_repo")
+hero_title = f"{current_repo} intelligence" if current_repo else "Repository Intelligence Dashboard"
+hero_subtitle = (
+    "Live repository telemetry is loaded. Re-scan to update metrics, compare against history, and surface what changed."
+    if current_repo
+    else "Analyze a GitHub repository to unlock live health, contributor, code-quality, trend, and risk intelligence."
+)
 st.markdown(
-    """
+    f"""
     <div class="hero-card">
-        <div class="hero-title">Repository Intelligence Dashboard</div>
-        <div class="hero-subtitle">Understand repository health, contributor momentum, code quality, and risk — then turn the signals into actions.</div>
+        <div class="hero-title">{hero_title}</div>
+        <div class="hero-subtitle">{hero_subtitle}</div>
     </div>
     """,
     unsafe_allow_html=True,

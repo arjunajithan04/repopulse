@@ -136,7 +136,8 @@ def repository_page():
     with col2:
         st.write("")
         st.write("")
-        analyze_clicked = st.button("Analyze", use_container_width=True, type="primary")
+        button_label = "Refresh live data" if st.session_state.get("current_repo") and st.session_state.current_repo.lower() == repository.strip().lower() else "Analyze"
+        analyze_clicked = st.button(button_label, use_container_width=True, type="primary")
 
     deep_scan = st.checkbox("Run deep code scan", value=False, help="Downloads a bounded set of source files and performs local code metrics. This can increase API requests.")
 
@@ -168,8 +169,15 @@ def repository_page():
                 analysis.metrics["code_analysis"] = code_metrics
 
             snapshot = _snapshot(analysis)
-            save_snapshot(snapshot)
             full_name = f"{repo_owner}/{repo_name}"
+            # Keep the previous snapshot so the dashboard can show real deltas.
+            st.session_state.previous_snapshot = st.session_state.repo_snapshots.get(full_name)
+            save_snapshot(snapshot)
+            try:
+                st.session_state.api_rate_limit = client.get_rate_limit()
+            except Exception:
+                st.session_state.api_rate_limit = None
+            st.session_state.last_refresh = datetime.now(timezone.utc).strftime("%d %b %Y, %H:%M UTC")
             st.session_state.repo_session_count += 1
             st.session_state.repo_session_history.append(full_name)
             st.session_state.current_repo = full_name
@@ -183,6 +191,15 @@ def repository_page():
 
     analysis = st.session_state.get("repo_analysis")
     if analysis is not None:
+        rate = st.session_state.get("api_rate_limit") or {}
+        resources = rate.get("resources", {}) if isinstance(rate, dict) else {}
+        core = resources.get("core", {}) if isinstance(resources, dict) else {}
+        if core:
+            remaining = core.get("remaining")
+            limit = core.get("limit")
+            if remaining is not None and limit:
+                tone = "good" if remaining / limit > .25 else "warning" if remaining / limit > .1 else "danger"
+                st.markdown(f'<span class="status-badge {tone}">API {remaining:,} / {limit:,} requests remaining</span>', unsafe_allow_html=True)
         repo = analysis.repository
         metrics = analysis.metrics or {}
         repo_name = repo.full_name or repo.name
