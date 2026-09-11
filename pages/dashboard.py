@@ -3,122 +3,129 @@ from __future__ import annotations
 import pandas as pd
 import streamlit as st
 
-from components.cards import metric_card
-from components.charts import render_bar_chart
+from data.history import get_snapshots
 
 
-def _delta(current: float, previous: float | None, inverse: bool = False) -> tuple[str, str]:
-    if previous is None:
-        return "First snapshot", "neutral"
-    if previous == 0:
-        return "New", "good" if current > 0 else "neutral"
+def _fmt(value: int | float) -> str:
+    value = value or 0
+    if value >= 1_000_000:
+        return f"{value / 1_000_000:.1f}M"
+    if value >= 1_000:
+        return f"{value / 1_000:.1f}K"
+    return f"{value:,}"
+
+
+def _delta(current, previous, inverse=False):
+    if previous is None or previous == 0:
+        return None
     change = ((current - previous) / abs(previous)) * 100
-    if inverse:
-        change = -change
-    variant = "good" if change > 0 else "bad" if change < 0 else "neutral"
-    return f"{change:+.1f}% since last analysis", variant
+    good = change <= 0 if inverse else change >= 0
+    sign = "+" if change > 0 else ""
+    return f"{sign}{change:.1f}% vs previous snapshot", "good" if good else "bad"
+
+
+def _risk(metrics):
+    issues = int(metrics.get("open_issue_count", 0) or 0)
+    prs = int(metrics.get("open_pull_request_count", 0) or 0)
+    bus_factor = int(metrics.get("bus_factor", 0) or 0)
+    health = float(metrics.get("repository_health_score", 0) or 0)
+    reasons = []
+    if issues > 50:
+        reasons.append(f"High open-issue pressure ({issues})")
+    elif issues > 20:
+        reasons.append(f"Elevated open-issue pressure ({issues})")
+    if prs > 25:
+        reasons.append(f"Large PR backlog ({prs})")
+    if bus_factor <= 1:
+        reasons.append("High contributor concentration")
+    elif bus_factor <= 3:
+        reasons.append("Moderate contributor concentration")
+    if health < 60:
+        reasons.append("Overall health score is below 60")
+    if len(reasons) >= 3 or health < 50:
+        return "HIGH", reasons
+    if reasons:
+        return "MEDIUM", reasons
+    return "LOW", ["No major risk signals detected from the available metrics."]
 
 
 def dashboard_page():
     st.subheader("Executive overview", divider="violet")
-
     analysis = st.session_state.get("repo_analysis")
     if analysis is None:
         st.info("Analyze a repository from the Repository page to populate the executive overview.")
         return
 
     repo = analysis.repository
-    metrics = analysis.metrics
-    repo_name = repo.full_name or repo.name
-    snapshots = st.session_state.get("repo_snapshots", {}).get(repo_name, [])
-    previous = snapshots[-2] if len(snapshots) >= 2 else None
+    metrics = analysis.metrics or {}
+    current_repo = repo.full_name or repo.name
+    history = get_snapshots(current_repo, limit=30)
+    previous = history[1] if len(history) > 1 else None
 
-    health = metrics.get("repository_health_score", 0)
-    status = "Healthy" if health >= 80 else "Moderate" if health >= 60 else "At risk"
-    st.markdown(f"### {repo_name} · {status}")
-    if repo.description:
-        st.caption(repo.description)
-
-    cols = st.columns(4)
-    values = [
-        ("Stars", repo.stars, "stars", False),
-        ("Forks", repo.forks, "forks", False),
-        ("Open issues", metrics.get("open_issue_count", 0), "issue pressure", True),
-        ("Health", health, "repository health", False),
-    ]
-    for col, (label, value, help_text, inverse) in zip(cols, values):
+    st.markdown(f"**{current_repo}** · repository pulse")
+    c1, c2, c3, c4 = st.columns(4)
+    values = [(repo.stars or 0, previous.get("stars") if previous else None, False), (repo.forks or 0, previous.get("forks") if previous else None, False), (metrics.get("open_issue_count", 0), previous.get("open_issues") if previous else None, True), (metrics.get("repository_health_score", 0), previous.get("health_score") if previous else None, False)]
+    labels = ["Stars", "Forks", "Open issues", "Health"]
+    for col, label, (current, old, inverse) in zip((c1, c2, c3, c4), labels, values):
+        delta = _delta(current, old, inverse)
         with col:
-            old = previous.get({"Stars": "stars", "Forks": "forks", "Open issues": "issues", "Health": "health"}[label]) if previous else None
-            delta, variant = _delta(value, old, inverse=inverse)
-            display = f"{value}/100" if label == "Health" else str(value)
-            metric_card(label, display, delta, help_text, variant=variant)
+            col.metric(label, f"{_fmt(current) if label != 'Health' else current} {'/100' if label == 'Health' else ''}", delta[0] if delta else None)
 
-    st.write("")
-    chart_data = {
-        "Stars": repo.stars,
-        "Forks": repo.forks,
-        "Issues": metrics.get("open_issue_count", 0),
-        "Contributors": metrics.get("total_contributors", 0),
-    }
-    render_bar_chart(chart_data, title="Repository snapshot")
-
-    st.markdown("### Health breakdown")
-    health_rows = pd.DataFrame(
-        [
-            {"Signal": "Activity", "Score": metrics.get("activity_score", 0)},
-            {"Signal": "Maintenance", "Score": metrics.get("maintenance_score", 0)},
-            {"Signal": "Issue health", "Score": metrics.get("issue_health_score", 0)},
-            {"Signal": "PR health", "Score": metrics.get("pr_health_score", 0)},
-            {"Signal": "Community", "Score": metrics.get("community_score", 0)},
-            {"Signal": "Contributor health", "Score": metrics.get("contributor_health_score", 0)},
-        ]
-    )
-    st.bar_chart(health_rows, x="Signal", y="Score")
-
-    col_left, col_right = st.columns(2)
-    with col_left:
-        st.markdown("### Repository risk")
-        risks = []
-        if metrics.get("open_issue_count", 0) > 50:
-            risks.append("⚠ Elevated open-issue pressure")
-        if metrics.get("open_pull_request_count", 0) > 20:
-            risks.append("⚠ Elevated pull-request backlog")
-        if metrics.get("contribution_concentration", 0) > 50:
-            risks.append("⚠ High contributor concentration")
-        if metrics.get("bus_factor", 0) <= 2 and metrics.get("total_contributors", 0) > 0:
-            risks.append("⚠ Low bus factor")
-        if not risks:
-            risks.append("✓ No major risk signals detected from the available data")
-        st.markdown("\n".join(f"- {r}" for r in risks))
-
-    with col_right:
-        st.markdown("### Recommended actions")
-        actions = []
-        if metrics.get("open_issue_count", 0) > 50:
-            actions.append("Prioritize issue triage and stale issue cleanup.")
-        if metrics.get("open_pull_request_count", 0) > 20:
-            actions.append("Review the pull-request backlog and stale PRs.")
-        if metrics.get("contribution_concentration", 0) > 50:
-            actions.append("Spread ownership across more contributors.")
-        if metrics.get("recent_commit_count", 0) < 5:
-            actions.append("Investigate whether development activity has slowed.")
-        if not actions:
-            actions.append("Continue monitoring activity, maintenance and contributor distribution.")
-        for action in actions:
-            st.markdown(f"- {action}")
-
-    if previous:
-        st.markdown("### What changed?")
-        changes = [
-            ("Stars", previous["stars"], repo.stars),
-            ("Forks", previous["forks"], repo.forks),
-            ("Open issues", previous["issues"], metrics.get("open_issue_count", 0)),
-            ("Health", previous["health"], health),
-        ]
-        st.dataframe(
-            [{"Metric": name, "Previous": old, "Current": new, "Change": new - old} for name, old, new in changes],
-            hide_index=True,
-            use_container_width=True,
-        )
+    st.markdown("### Repository health")
+    dimensions = metrics.get("health_dimensions", {})
+    if dimensions:
+        rows = [{"Dimension": key.replace("_", " ").title(), "Score": value} for key, value in dimensions.items()]
+        st.bar_chart(pd.DataFrame(rows), x="Dimension", y="Score")
     else:
-        st.caption("Run the same repository again later to unlock snapshot-to-snapshot change tracking.")
+        st.info("Health dimensions are unavailable for this analysis.")
+
+    left, right = st.columns([1.15, 1])
+    with left:
+        st.markdown("### Historical trend")
+        if len(history) >= 2:
+            trend = pd.DataFrame(list(reversed(history)))
+            trend["Captured"] = pd.to_datetime(trend["captured_at"])
+            trend = trend.set_index("Captured")[["stars", "forks", "open_issues", "open_pull_requests", "health_score"]]
+            st.line_chart(trend)
+        else:
+            st.info("Run this repository analysis again later to populate a persistent trend line.")
+    with right:
+        st.markdown("### Repository risk")
+        level, reasons = _risk(metrics)
+        if level == "HIGH":
+            st.error(f"**{level} risk**")
+        elif level == "MEDIUM":
+            st.warning(f"**{level} risk**")
+        else:
+            st.success(f"**{level} risk**")
+        for reason in reasons:
+            st.markdown(f"- {reason}")
+
+    st.markdown("### What changed?")
+    if previous:
+        changes = []
+        fields = [("Stars", "stars"), ("Forks", "forks"), ("Open issues", "open_issues"), ("Open PRs", "open_pull_requests"), ("Contributors", "contributors"), ("Health", "health_score")]
+        current_values = {"stars": repo.stars or 0, "forks": repo.forks or 0, "open_issues": metrics.get("open_issue_count", 0), "open_pull_requests": metrics.get("open_pull_request_count", 0), "contributors": metrics.get("total_contributors", 0), "health_score": metrics.get("repository_health_score", 0)}
+        for label, key in fields:
+            old, new = previous.get(key, 0), current_values[key]
+            if old != new:
+                direction = "increased" if new > old else "decreased"
+                changes.append(f"- **{label}** {direction} from {old:,} to {new:,}")
+        st.markdown("\n".join(changes) if changes else "- No metric changes since the previous persistent snapshot.")
+    else:
+        st.info("This is the first persistent snapshot for this repository.")
+
+    st.markdown("### Recommended actions")
+    actions = []
+    if metrics.get("open_issue_count", 0) > 20:
+        actions.append("Triage the oldest open issues and identify stale backlog items.")
+    if metrics.get("open_pull_request_count", 0) > 15:
+        actions.append("Audit the pull-request backlog and prioritize stale PRs.")
+    if metrics.get("bus_factor", 0) <= 2:
+        actions.append("Reduce contributor concentration through documentation, ownership sharing, and onboarding.")
+    if metrics.get("repository_health_score", 0) < 70:
+        actions.append("Open Code Insights and address the weakest health dimensions first.")
+    if not actions:
+        actions.append("Maintain the current development cadence and re-analyze periodically to monitor change.")
+    for action in dict.fromkeys(actions):
+        st.markdown(f"- {action}")
