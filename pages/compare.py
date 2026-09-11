@@ -3,16 +3,18 @@ from __future__ import annotations
 import pandas as pd
 import streamlit as st
 
+from components.ui import page_header, empty_state
+
 from analysis.intelligence import compare_snapshots
 
 
 def compare_page():
     snapshots = st.session_state.get("repo_snapshots", {})
     repos = list(snapshots.keys())
-    st.subheader("Repository Comparison", divider="blue")
+    page_header("Intelligence", "Repository Comparison", "Compare repository health, activity and engineering signals side by side.")
     st.caption("Compare repositories using the same health, activity, engineering, and backlog signals.")
     if len(repos) < 2:
-        st.info("Analyze at least two repositories in this session to unlock comparison.")
+        empty_state("Comparison needs two repositories", "Analyze at least two repositories in this session to compare their health and engineering signals.", "⇄")
         return
 
     c1, c2 = st.columns(2)

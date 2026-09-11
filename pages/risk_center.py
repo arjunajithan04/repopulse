@@ -2,20 +2,22 @@ from __future__ import annotations
 
 import streamlit as st
 
+from components.ui import page_header, empty_state
+
 from analysis.intelligence import detect_risks
 
 
 def risk_center_page():
     analysis = st.session_state.get("repo_analysis")
     if analysis is None:
-        st.subheader("Risk Center", divider="blue")
-        st.info("Analyze a repository to generate live risk signals.")
+        page_header("Intelligence", "Risk Center", "Prioritized, explainable signals that deserve attention.")
+        empty_state("No repository loaded", "Analyze a repository from the Repository page to generate live risk signals.", "⚠")
         return
 
     repo = analysis.repository
     metrics = analysis.metrics or {}
     risks = detect_risks(metrics)
-    st.subheader("Risk Center", divider="blue")
+    page_header("Intelligence", "Risk Center", "Prioritized, explainable signals that deserve attention.")
     st.caption(f"Explainable risk signals for {repo.full_name}. Signals are derived from the latest measured repository metrics.")
 
     counts = {"Critical": 0, "High": 0, "Medium": 0, "Low": 0}

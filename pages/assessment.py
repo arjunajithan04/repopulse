@@ -2,21 +2,23 @@ from __future__ import annotations
 
 import streamlit as st
 
+from components.ui import page_header, empty_state
+
 from analysis.intelligence import assessment
 
 
 def assessment_page():
     analysis = st.session_state.get("repo_analysis")
     if analysis is None:
-        st.subheader("Repository Assessment", divider="blue")
-        st.info("Analyze a repository to generate its automated assessment.")
+        page_header("Intelligence", "Repository Assessment", "A plain-language assessment built from measured RepoPulse signals.")
+        empty_state("No repository loaded", "Analyze a repository from the Repository page to generate an automated assessment.", "◈")
         return
 
     repo = analysis.repository
     result = assessment(analysis.metrics or {}, st.session_state.get("previous_snapshot"))
     tone = "good" if result["status"] == "Healthy" else "warning" if result["status"] == "Moderate" else "danger"
 
-    st.subheader("Repository Assessment", divider="blue")
+    page_header("Intelligence", "Repository Assessment", "A plain-language assessment built from measured RepoPulse signals.")
     st.caption(f"Automated, explainable assessment based on RepoPulse metrics for {repo.full_name}.")
 
     left, right = st.columns([1, 2])
