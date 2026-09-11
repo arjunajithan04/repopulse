@@ -2,8 +2,13 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Sequence, Tuple
 
+from analysis.metrics import (
+    compute_contributor_metrics,
+    compute_health_metrics,
+    compute_repository_metrics,
+    enrich_contributor_activity,
+)
 from core.models import AnalysisResult, ContributorStats, RepositoryStats
-from analysis.metrics import compute_contributor_metrics, compute_repository_metrics
 
 
 def parse_repository_input(repo_value: str) -> Tuple[str, str]:
@@ -11,22 +16,15 @@ def parse_repository_input(repo_value: str) -> Tuple[str, str]:
     if not candidate:
         raise ValueError("Please provide a GitHub repository in the format owner/repo or a GitHub URL.")
 
-    candidate = candidate.replace("https://github.com/", "")
-    candidate = candidate.replace("http://github.com/", "")
-    candidate = candidate.replace("www.github.com/", "")
-    candidate = candidate.replace("github.com/", "")
+    for prefix in ("https://github.com/", "http://github.com/", "www.github.com/", "github.com/"):
+        if candidate.startswith(prefix):
+            candidate = candidate[len(prefix):]
+            break
 
-    if "/" not in candidate:
+    parts = [part.strip() for part in candidate.split("/") if part.strip()]
+    if len(parts) != 2:
         raise ValueError("Repository must include both owner and repo, for example: microsoft/vscode")
-
-    owner, repo = candidate.split("/", 1)
-    owner = owner.strip()
-    repo = repo.strip()
-
-    if not owner or not repo:
-        raise ValueError("Repository must include both owner and repo, for example: microsoft/vscode")
-
-    return owner, repo
+    return parts[0], parts[1]
 
 
 def limit_repo_batch(repos: Sequence[str], max_repos: int = 10) -> List[str]:
@@ -74,37 +72,52 @@ def analyze_repository(
             login=item.get("login", "unknown"),
             contributions=item.get("contributions", 0),
             commits=item.get("contributions", 0),
-            pull_requests=0,
-            issues=0,
             avatar_url=item.get("avatar_url"),
         )
         for item in contributors_data
     ]
 
     languages = languages_data or {}
-    open_issues = issues_data or []
-    open_prs = [pr for pr in (pull_requests_data or []) if pr.get("state") == "open"]
+    all_issues = issues_data or []
+    all_prs = pull_requests_data or []
+    open_issues = [issue for issue in all_issues if issue.get("state") == "open" and "pull_request" not in issue]
+    open_prs = [pr for pr in all_prs if pr.get("state") == "open"]
     recent_commits = commits_data or []
+
+    enrich_contributor_activity(contributors, all_prs, all_issues)
+    contributor_metrics = compute_contributor_metrics(contributors)
+    health_metrics = compute_health_metrics(
+        repo,
+        open_issues=len(open_issues),
+        open_prs=len(open_prs),
+        recent_commits=len(recent_commits),
+        contributor_count=len(contributors),
+        total_contributions=contributor_metrics["total_contributions"],
+    )
 
     metrics = {
         **compute_repository_metrics(repo),
-        **compute_contributor_metrics(contributors),
+        **contributor_metrics,
+        **health_metrics,
         "language_breakdown": languages,
         "languages_total": len(languages),
         "open_issue_count": len(open_issues),
         "open_pull_request_count": len(open_prs),
         "recent_commit_count": len(recent_commits),
-        "repository_health_score": min(100, max(0, round((repo.stars * 0.35 + repo.forks * 0.4 + max(0, 100 - repo.open_issues) * 0.25), 2))),
+        "analysis_coverage": {
+            "contributors": len(contributors),
+            "pull_requests": len(all_prs),
+            "issues": len(all_issues),
+            "commits": len(recent_commits),
+        },
     }
 
+    health = health_metrics["repository_health_score"]
+    status = "Healthy" if health >= 80 else "Moderate" if health >= 60 else "At risk"
     summary = (
-        f"{repo.full_name} has {repo.stars} stars, {repo.forks} forks, {len(contributors)} contributors, "
+        f"{repo.full_name} is {status.lower()} at {health}/100. "
+        f"It has {repo.stars} stars, {repo.forks} forks, {len(contributors)} contributors, "
         f"{len(open_prs)} open pull requests, and {len(open_issues)} open issues."
     )
 
-    return AnalysisResult(
-        repository=repo,
-        contributors=contributors,
-        metrics=metrics,
-        summary=summary,
-    )
+    return AnalysisResult(repository=repo, contributors=contributors, metrics=metrics, summary=summary)

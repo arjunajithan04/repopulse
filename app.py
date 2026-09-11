@@ -133,6 +133,41 @@ st.markdown(
             line-height: 1.05;
             margin: 0;
         }
+        .repo-input-card {
+            background: linear-gradient(180deg, rgba(17, 21, 28, 0.92), rgba(11, 14, 19, 0.92));
+            border: 1px solid var(--line);
+            border-radius: 16px;
+            padding: 1rem 1.1rem;
+            margin-bottom: 0.6rem;
+        }
+
+        .repo-input-title {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: var(--text);
+        }
+
+        .repo-input-subtitle {
+            color: var(--muted);
+            font-size: 0.82rem;
+            margin-top: 0.2rem;
+        }
+
+        .status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            padding: 0.25rem 0.6rem;
+            border: 1px solid var(--line);
+            border-radius: 999px;
+            background: rgba(255,255,255,0.03);
+            color: var(--muted);
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
         .hero-subtitle {
             position: relative;
             z-index: 1;
