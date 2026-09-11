@@ -848,3 +848,32 @@ This modular design enables:
 - ✅ Efficient API resource usage
 - ✅ Smooth user experience with instant feedback
 
+
+## Phase 4 intelligence layer
+
+`analysis/intelligence.py` centralizes explainable product-level intelligence so the UI pages do not duplicate business rules.
+
+### Risk engine
+`detect_risks(metrics)` evaluates:
+- overall health
+- issue and PR backlog
+- bus factor
+- contributor concentration
+- active-contributor ratio
+- weakest health dimension
+- optional code-quality score and complexity
+
+Each risk has severity, evidence, and a recommended action.
+
+### Trend engine
+`trend_summary(current, previous)` calculates absolute and percentage movement for stars, forks, issues, PRs, contributors, recent commits, and health. Issue/PR movement is interpreted inversely because lower backlog is generally healthier.
+
+### Assessment engine
+`assessment(metrics, previous)` combines status, strengths, risks, priorities, weakest dimension, and trend movement into a deterministic repository assessment. It intentionally does not claim to be an LLM-generated analysis.
+
+### Comparison engine
+`compare_snapshots(...)` compares repositories with metric-specific semantics: higher is better for health/activity/community signals, while lower is better for open issues and PRs.
+
+## Phase 5 architecture
+
+`analysis/activity.py` contains commit-window and recency analysis. `analysis/engineering.py` inventories documentation, testing structure, and common dependency manifests. The repository page uses Streamlit's cache layer for GitHub reads and passes a repository-specific refresh nonce so normal rerenders do not repeatedly call the API while an explicit refresh retrieves new data. Engineering metrics are intentionally evidence-based and do not claim package vulnerability status or test coverage when those signals have not been measured.

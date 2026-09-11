@@ -29,9 +29,25 @@ def init_db() -> None:
                 contributors INTEGER DEFAULT 0,
                 recent_commits INTEGER DEFAULT 0,
                 health_score REAL DEFAULT 0,
-                health_dimensions TEXT DEFAULT '{}'
+                health_dimensions TEXT DEFAULT '{}',
+                activity_score REAL DEFAULT 0,
+                engineering_score REAL DEFAULT 0,
+                documentation_score REAL DEFAULT 0,
+                testing_score REAL DEFAULT 0,
+                dependencies_observed INTEGER DEFAULT 0
             )
         """)
+        existing = {row[1] for row in conn.execute("PRAGMA table_info(repository_snapshots)").fetchall()}
+        migrations = {
+            "activity_score": "REAL DEFAULT 0",
+            "engineering_score": "REAL DEFAULT 0",
+            "documentation_score": "REAL DEFAULT 0",
+            "testing_score": "REAL DEFAULT 0",
+            "dependencies_observed": "INTEGER DEFAULT 0",
+        }
+        for column, definition in migrations.items():
+            if column not in existing:
+                conn.execute(f"ALTER TABLE repository_snapshots ADD COLUMN {column} {definition}")
         conn.execute("CREATE INDEX IF NOT EXISTS idx_snapshots_repo_time ON repository_snapshots(full_name, captured_at)")
 
 
@@ -41,13 +57,15 @@ def save_snapshot(snapshot: dict[str, Any]) -> None:
         conn.execute("""
             INSERT INTO repository_snapshots
             (full_name, captured_at, stars, forks, open_issues, open_pull_requests,
-             contributors, recent_commits, health_score, health_dimensions)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+             contributors, recent_commits, health_score, health_dimensions,
+             activity_score, engineering_score, documentation_score, testing_score, dependencies_observed)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
             snapshot.get("full_name", ""), snapshot.get("timestamp", ""), snapshot.get("stars", 0), snapshot.get("forks", 0),
-            snapshot.get("issues", 0), snapshot.get("pull_requests", 0),
-            snapshot.get("contributors", 0), snapshot.get("commits", 0), snapshot.get("health", 0),
-            json.dumps(snapshot.get("health_dimensions", {})),
+            snapshot.get("issues", 0), snapshot.get("pull_requests", 0), snapshot.get("contributors", 0), snapshot.get("commits", 0),
+            snapshot.get("health", 0), json.dumps(snapshot.get("health_dimensions", {})), snapshot.get("activity_score", 0),
+            snapshot.get("engineering_score", 0), snapshot.get("documentation_score", 0), snapshot.get("testing_score", 0),
+            snapshot.get("dependencies_observed", 0),
         ))
 
 

@@ -3,6 +3,8 @@ from __future__ import annotations
 from typing import Any, Dict, List, Sequence, Tuple
 
 from analysis.metrics import compute_contributor_metrics, compute_health_dimensions, compute_repository_health, compute_repository_metrics
+from analysis.activity import analyze_activity
+from analysis.engineering import analyze_engineering
 from core.models import AnalysisResult, ContributorStats, RepositoryStats
 
 
@@ -75,6 +77,8 @@ def analyze_repository(
     issues_data: List[Dict[str, Any]] | None = None,
     pull_requests_data: List[Dict[str, Any]] | None = None,
     commits_data: List[Dict[str, Any]] | None = None,
+    tree_data: List[Dict[str, Any]] | None = None,
+    scanned_files: List[Dict[str, str]] | None = None,
 ) -> AnalysisResult:
     repo = RepositoryStats(
         name=repo_data.get("name", ""),
@@ -99,6 +103,9 @@ def analyze_repository(
     dimensions = compute_health_dimensions(repo, contributors, len(issues), len(open_prs), len(commits))
     health = compute_repository_health(dimensions)
 
+    activity = analyze_activity(commits, all_prs, issues_data or [])
+    engineering = analyze_engineering(tree_data or [], scanned_files or [])
+
     metrics = {
         **compute_repository_metrics(repo),
         **compute_contributor_metrics(contributors),
@@ -109,6 +116,8 @@ def analyze_repository(
         "recent_commit_count": len(commits),
         "health_dimensions": dimensions,
         "repository_health_score": health,
+        "activity_intelligence": activity,
+        "engineering_intelligence": engineering,
     }
 
     summary = (

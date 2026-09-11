@@ -4,6 +4,9 @@ from pages.dashboard import dashboard_page
 from pages.repository import repository_page
 from pages.contributors import contributors_page
 from pages.code_insights import code_insights_page
+from pages.risk_center import risk_center_page
+from pages.assessment import assessment_page
+from pages.compare import compare_page
 
 
 st.set_page_config(
@@ -19,205 +22,44 @@ st.set_page_config(
 st.markdown(
     """
     <style>
-        :root {
-            --bg: #0a0d12;
-            --bg-2: #0f141b;
-            --panel: rgba(17, 21, 28, 0.92);
-            --panel-soft: rgba(22, 27, 35, 0.82);
-            --line: rgba(255,255,255,0.08);
-            --line-strong: rgba(255,255,255,0.14);
-            --text: #f5f7fb;
-            --muted: #9aa7b5;
-            --primary: #8b5cf6;
-            --primary-2: #5b8ef7;
-            --accent: #8be9fd;
-            --success: #34d399;
-            --warning: #fbbf24;
-            --danger: #f87171;
-            --shadow: 0 18px 50px rgba(0,0,0,0.28);
-        }
-
-        html, body, [data-testid="stAppViewContainer"], [data-testid="stApp"] {
-            background: var(--bg);
-            color: var(--text);
-        }
-
-        .stApp {
-            background:
-                radial-gradient(circle at top left, rgba(139,92,246,0.18), transparent 27%),
-                radial-gradient(circle at bottom right, rgba(91,142,247,0.16), transparent 25%),
-                linear-gradient(180deg, var(--bg) 0%, var(--bg-2) 100%);
-        }
-
-        [data-testid="stSidebar"] {
-            background: rgba(10,13,18,0.97);
-            border-right: 1px solid var(--line);
-            width: 84px !important;
-            min-width: 84px !important;
-            max-width: 84px !important;
-            transition: width .25s ease, min-width .25s ease, max-width .25s ease;
-            overflow: hidden;
-        }
-        [data-testid="stSidebar"]:hover {
-            width: 292px !important;
-            min-width: 292px !important;
-            max-width: 292px !important;
-        }
-        [data-testid="stSidebarContent"] { padding: 1rem .7rem; }
-
-        .sidebar-brand {
-            font-size: 1.25rem;
-            font-weight: 800;
-            letter-spacing: -.06em;
-            margin: .2rem 0 .15rem .35rem;
-            white-space: nowrap;
-        }
-        .sidebar-subtitle {
-            color: var(--muted);
-            font-size: .67rem;
-            letter-spacing: .12em;
-            text-transform: uppercase;
-            margin: 0 0 1rem .35rem;
-            opacity: 0;
-            transition: opacity .2s ease;
-            white-space: nowrap;
-        }
-        [data-testid="stSidebar"]:hover .sidebar-subtitle { opacity: 1; }
-
-        .stRadio > div { gap: .45rem; }
-        .stRadio [role="radio"] {
-            border-radius: 12px;
-            padding: .72rem .7rem;
-            color: var(--muted);
-            border: 1px solid transparent;
-            transition: all .2s ease;
-            white-space: nowrap;
-            overflow: hidden;
-        }
-        .stRadio [role="radio"]:hover {
-            background: rgba(255,255,255,.025);
-            border-color: var(--line);
-        }
-        .stRadio [role="radio"][aria-checked="true"] {
-            color: var(--text);
-            background: linear-gradient(180deg, rgba(139,92,246,.18), rgba(91,142,247,.08));
-            border-color: rgba(139,92,246,.4);
-        }
-
-        .hero-card {
-            position: relative;
-            background: linear-gradient(180deg, rgba(20,25,31,.97), rgba(15,19,26,.95));
-            border: 1px solid var(--line-strong);
-            border-radius: 22px;
-            padding: 1.45rem 1.55rem;
-            margin-bottom: 1.15rem;
-            box-shadow: 0 0 0 1px rgba(139,92,246,.12), var(--shadow);
-            overflow: hidden;
-        }
-        .hero-card:after {
-            content: "";
-            position: absolute;
-            width: 260px;
-            height: 260px;
-            left: -80px;
-            top: -100px;
-            background: radial-gradient(circle, rgba(139,92,246,.2), transparent 65%);
-            pointer-events: none;
-        }
-        .hero-title {
-            position: relative;
-            z-index: 1;
-            font-size: clamp(2rem, 3vw, 2.75rem);
-            font-weight: 750;
-            letter-spacing: -.065em;
-            line-height: 1.05;
-            margin: 0;
-        }
-        .hero-subtitle {
-            position: relative;
-            z-index: 1;
-            color: var(--muted);
-            margin-top: .55rem;
-            line-height: 1.6;
-        }
-
-        .section-card {
-            background: linear-gradient(180deg, rgba(17,21,28,.9), rgba(11,14,19,.9));
-            border: 1px solid var(--line);
-            border-radius: 18px;
-            padding: 1rem 1.1rem;
-            box-shadow: var(--shadow);
-        }
-        .insight-card {
-            border: 1px solid var(--line);
-            border-radius: 16px;
-            padding: .9rem 1rem;
-            background: rgba(17,21,28,.72);
-            min-height: 100px;
-        }
-        .insight-title { font-weight: 700; margin-bottom: .35rem; }
-        .insight-text { color: var(--muted); font-size: .88rem; line-height: 1.5; }
-        .metric-card {
-            background: linear-gradient(180deg, rgba(18,23,30,.95), rgba(12,16,22,.92));
-            border: 1px solid var(--line);
-            border-radius: 16px;
-            padding: 1rem;
-            min-height: 132px;
-            box-shadow: var(--shadow);
-            transition: transform .2s ease, border-color .2s ease, background .2s ease;
-        }
-        .metric-card:hover { transform: translateY(-2px); border-color: rgba(139,92,246,.35); }
-        .metric-label { color: var(--muted); font-size: .76rem; text-transform: uppercase; letter-spacing: .08em; }
-        .metric-value { font-size: 1.7rem; font-weight: 760; letter-spacing: -.04em; margin-top: .3rem; }
-        .metric-delta { font-size: .78rem; font-weight: 700; margin-top: .25rem; }
-        .metric-delta.good { color: var(--success); }
-        .metric-delta.bad { color: var(--danger); }
-        .metric-delta.neutral { color: var(--muted); }
-        .metric-help { color: var(--muted); font-size: .7rem; margin-top: .55rem; }
-        .status-badge { display:inline-block; padding:.32rem .65rem; border-radius:999px; font-size:.68rem; font-weight:800; letter-spacing:.08em; border:1px solid var(--line); margin-bottom:.45rem; }
-        .status-badge.good { color: var(--success); background: rgba(52,211,153,.09); border-color: rgba(52,211,153,.28); }
-        .status-badge.warning { color: var(--warning); background: rgba(251,191,36,.09); border-color: rgba(251,191,36,.28); }
-        .status-badge.danger { color: var(--danger); background: rgba(248,113,113,.09); border-color: rgba(248,113,113,.28); }
-        .status-badge.neutral { color: var(--muted); background: rgba(255,255,255,.04); }
-        .risk-row { padding:.65rem .8rem; margin:.4rem 0; border:1px solid rgba(248,113,113,.16); background:rgba(248,113,113,.05); border-radius:10px; color:#f5f7fb; }
-        .score-pill {
-            display: inline-block;
-            padding: .28rem .6rem;
-            border-radius: 999px;
-            font-size: .74rem;
-            font-weight: 700;
-            background: rgba(139,92,246,.13);
-            border: 1px solid rgba(139,92,246,.28);
-        }
-
-        .stButton > button {
-            background: linear-gradient(135deg, var(--primary), var(--primary-2));
-            border: 0;
-            border-radius: 10px;
-            color: white;
-            font-weight: 650;
-            box-shadow: 0 12px 24px rgba(91,142,247,.16);
-            transition: transform .2s ease, filter .2s ease;
-        }
-        .stButton > button:hover { transform: translateY(-1px); filter: brightness(1.06); }
-        .stTextInput input, .stSelectbox [data-baseweb="select"], .stTextArea textarea {
-            background: rgba(15,18,24,.86) !important;
-            border-radius: 10px !important;
-        }
-        .stDataFrame { border-radius: 14px; overflow: hidden; }
-        .main .block-container { max-width: 1480px; padding-top: 1.35rem; padding-bottom: 2.5rem; }
-
-        @media (max-width: 900px) {
-            [data-testid="stSidebar"], [data-testid="stSidebar"]:hover {
-                width: 68px !important; min-width: 68px !important; max-width: 68px !important;
-            }
-            .sidebar-subtitle { display: none; }
-        }
+    :root {
+      --bg:#080a0f; --surface:#10131a; --surface-2:#151922; --surface-3:#1a1f29;
+      --line:rgba(255,255,255,.075); --line-strong:rgba(255,255,255,.13);
+      --text:#f4f6fa; --muted:#8994a5; --primary:#8b5cf6; --primary-2:#6366f1;
+      --success:#34d399; --warning:#fbbf24; --danger:#fb7185;
+      --shadow:0 14px 40px rgba(0,0,0,.22);
+    }
+    html,body,[data-testid="stAppViewContainer"],[data-testid="stApp"]{background:var(--bg);color:var(--text)}
+    .stApp{background:radial-gradient(circle at 12% 0%,rgba(139,92,246,.10),transparent 28%),linear-gradient(180deg,#080a0f,#0b0e14)}
+    [data-testid="stSidebar"]{background:#0b0e13;border-right:1px solid var(--line);width:236px!important;min-width:236px!important;max-width:236px!important}
+    [data-testid="stSidebarContent"]{padding:1.2rem .9rem}
+    .sidebar-brand{font-size:1.25rem;font-weight:800;letter-spacing:-.05em;margin:.2rem .4rem .05rem}
+    .sidebar-subtitle{font-size:.68rem;color:var(--muted);letter-spacing:.14em;text-transform:uppercase;margin:0 .4rem 1.35rem}
+    .sidebar-section{font-size:.63rem;color:#657083;text-transform:uppercase;letter-spacing:.12em;margin:1.15rem .45rem .45rem}
+    .stRadio>div{gap:.28rem}.stRadio [role="radio"]{border:1px solid transparent;border-radius:10px;padding:.62rem .7rem;color:var(--muted);transition:.18s}
+    .stRadio [role="radio"]:hover{background:rgba(255,255,255,.035);border-color:var(--line)}
+    .stRadio [role="radio"][aria-checked="true"]{color:#fff;background:rgba(139,92,246,.12);border-color:rgba(139,92,246,.25)}
+    .repo-context{margin-top:1rem;padding:.75rem;border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.025)}
+    .repo-context-label{font-size:.6rem;color:#687486;text-transform:uppercase;letter-spacing:.12em}.repo-context-name{font-size:.78rem;font-weight:650;margin-top:.3rem;overflow:hidden;text-overflow:ellipsis}
+    .topbar{display:flex;justify-content:space-between;align-items:center;padding:.2rem 0 .9rem;border-bottom:1px solid var(--line);margin-bottom:1.1rem}
+    .eyebrow{font-size:.68rem;font-weight:750;color:#8f9bad;text-transform:uppercase;letter-spacing:.14em;margin-bottom:.3rem}.page-title{font-size:2rem!important;letter-spacing:-.055em;margin:0!important}.page-description{color:var(--muted);font-size:.88rem;margin-top:.35rem;line-height:1.5}
+    .hero-card{padding:1.35rem 1.5rem;border:1px solid var(--line-strong);border-radius:18px;background:linear-gradient(135deg,rgba(18,22,30,.98),rgba(13,16,22,.96));box-shadow:var(--shadow);margin-bottom:1.15rem}
+    .hero-title{font-size:1.45rem;font-weight:750;letter-spacing:-.045em}.hero-subtitle{color:var(--muted);font-size:.84rem;margin-top:.35rem}
+    .metric-card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:1rem;min-height:120px;box-shadow:var(--shadow);transition:.18s}.metric-card:hover{transform:translateY(-2px);border-color:rgba(139,92,246,.32)}
+    .metric-label{font-size:.66rem;color:#7d8999;text-transform:uppercase;letter-spacing:.1em}.metric-value{font-size:1.7rem;font-weight:780;letter-spacing:-.045em;margin-top:.25rem}.metric-delta{font-size:.75rem;font-weight:700;margin-top:.2rem}.metric-delta.good{color:var(--success)}.metric-delta.bad{color:var(--danger)}.metric-delta.neutral{color:var(--muted)}.metric-help{font-size:.67rem;color:#687486;margin-top:.5rem}
+    .section-title{font-size:1rem;font-weight:720;letter-spacing:-.02em;margin:.5rem 0 .1rem}.section-subtitle{font-size:.75rem;color:var(--muted);margin-bottom:.65rem}
+    .section-card,.insight-card,.risk-card,.assessment-score{background:var(--surface);border:1px solid var(--line);border-radius:15px;box-shadow:var(--shadow)}
+    .insight-card{padding:.9rem 1rem;min-height:105px}.insight-card.good{border-color:rgba(52,211,153,.2)}.insight-card.warning{border-color:rgba(251,191,36,.2)}.insight-card.danger{border-color:rgba(251,113,133,.22)}.insight-label{display:inline-block;font-size:.58rem;text-transform:uppercase;letter-spacing:.1em;padding:.2rem .45rem;border-radius:999px;margin-bottom:.45rem;background:rgba(255,255,255,.05);color:var(--muted)}.insight-label.good{color:var(--success)}.insight-label.warning{color:var(--warning)}.insight-label.danger{color:var(--danger)}.insight-title{font-weight:700}.insight-text{color:var(--muted);font-size:.78rem;line-height:1.5;margin-top:.25rem}
+    .status-badge{display:inline-block;padding:.3rem .55rem;border-radius:999px;font-size:.62rem;font-weight:800;letter-spacing:.08em;border:1px solid var(--line)}.status-badge.good{color:var(--success);background:rgba(52,211,153,.08);border-color:rgba(52,211,153,.22)}.status-badge.warning{color:var(--warning);background:rgba(251,191,36,.08);border-color:rgba(251,191,36,.22)}.status-badge.danger{color:var(--danger);background:rgba(251,113,133,.08);border-color:rgba(251,113,133,.22)}.status-badge.neutral{color:var(--muted)}
+    .risk-card{padding:1rem 1.1rem;margin:.6rem 0}.risk-card.danger{border-color:rgba(251,113,133,.25)}.risk-card.warning{border-color:rgba(251,191,36,.22)}.risk-card.good{border-color:rgba(52,211,153,.22)}.risk-detail{color:var(--muted);font-size:.82rem;line-height:1.5;margin:.45rem 0}.risk-action{font-size:.75rem;padding:.6rem .7rem;border-radius:9px;background:rgba(255,255,255,.035);color:#d8dee7}
+    .change-row{display:grid;grid-template-columns:30px 1fr auto;gap:.65rem;align-items:center;padding:.65rem .75rem;margin:.35rem 0;border:1px solid var(--line);border-radius:10px;background:rgba(255,255,255,.018);font-size:.78rem}.change-symbol.positive{color:var(--success)}.change-symbol.negative{color:var(--danger)}
+    .assessment-score{padding:1.1rem}.score-ring{width:124px;height:124px;margin:0 auto .6rem;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:2.3rem;font-weight:800;background:radial-gradient(circle at center,#10131a 57%,transparent 58%),conic-gradient(var(--primary),var(--primary-2) 300deg,rgba(255,255,255,.08) 300deg)}
+    .empty-state{text-align:center;padding:3rem 1rem;border:1px dashed var(--line-strong);border-radius:16px;background:rgba(255,255,255,.012)}.empty-icon{font-size:2rem;color:#657083}.empty-title{font-weight:700;margin-top:.4rem}.empty-text{color:var(--muted);font-size:.8rem;max-width:500px;margin:.3rem auto;line-height:1.5}
+    .stButton>button{border-radius:9px;font-weight:650;border:1px solid var(--line-strong);transition:.18s}.stButton>button:hover{border-color:rgba(139,92,246,.45);transform:translateY(-1px)}
+    .stTextInput input,.stTextArea textarea,.stSelectbox [data-baseweb="select"]{background:#0f131a!important;border-radius:9px!important}.stProgress>div>div{border-radius:999px}.main .block-container{max-width:1450px;padding-top:1.1rem;padding-bottom:3rem}
+    @media(max-width:900px){[data-testid="stSidebar"],[data-testid="stSidebar"]:hover{width:210px!important;min-width:210px!important;max-width:210px!important}.page-title{font-size:1.65rem!important}}
     </style>
-    """,
-    unsafe_allow_html=True,
-)
-
+    """, unsafe_allow_html=True)
 
 # -----------------------------------------------------------------------------
 # Shared session state
@@ -247,14 +89,17 @@ pages = {
     "Repository": repository_page,
     "Contributors": contributors_page,
     "Code Insights": code_insights_page,
+    "Risk Center": risk_center_page,
+    "Assessment": assessment_page,
+    "Compare": compare_page,
 }
 
 with st.sidebar:
     st.markdown('<div class="sidebar-brand">RP</div>', unsafe_allow_html=True)
     st.markdown('<div class="sidebar-subtitle">GitHub Intelligence</div>', unsafe_allow_html=True)
 
-    icon_options = ["📊", "📁", "👥", "🧠"]
-    icon_page_map = {"📊": "Dashboard", "📁": "Repository", "👥": "Contributors", "🧠": "Code Insights"}
+    icon_options = ["📊", "📁", "👥", "🧠", "🚨", "🤖", "⚖️"]
+    icon_page_map = {"📊": "Dashboard", "📁": "Repository", "👥": "Contributors", "🧠": "Code Insights", "🚨": "Risk Center", "🤖": "Assessment", "⚖️": "Compare"}
     selected_icon = st.radio(
         "Navigation",
         icon_options,

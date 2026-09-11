@@ -8,7 +8,7 @@ def metric_card(title: str, value: str, delta: str | None = None, help_text: str
     delta_class = {"good": "good", "bad": "bad", "neutral": "neutral"}.get(variant, "neutral")
     st.markdown(
         f"""
-        <div class="metric-card">
+        <div class="metric-card rp-metric">
             <div class="metric-label">{html.escape(str(title))}</div>
             <div class="metric-value">{html.escape(str(value))}</div>
             <div class="metric-delta {delta_class}">{html.escape(str(delta or '—'))}</div>

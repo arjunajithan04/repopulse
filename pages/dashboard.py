@@ -3,7 +3,9 @@ from __future__ import annotations
 import pandas as pd
 import streamlit as st
 
+from analysis.intelligence import assessment, detect_risks, trend_summary
 from components.cards import metric_card, status_badge
+from components.ui import page_header, section_header, insight_card, empty_state
 from data.history import get_snapshots
 
 
@@ -25,29 +27,6 @@ def _delta(current, previous, inverse=False):
     return f"{sign}{change:.1f}%", "good" if good else "bad"
 
 
-def _risk(metrics):
-    issues = int(metrics.get("open_issue_count", 0) or 0)
-    prs = int(metrics.get("open_pull_request_count", 0) or 0)
-    bus_factor = int(metrics.get("bus_factor", 0) or 0)
-    health = float(metrics.get("repository_health_score", 0) or 0)
-    reasons = []
-    if issues > 50:
-        reasons.append("High issue pressure")
-    elif issues > 20:
-        reasons.append("Growing issue backlog")
-    if prs > 30:
-        reasons.append("Large PR backlog")
-    elif prs > 15:
-        reasons.append("PR backlog needs attention")
-    if bus_factor <= 1 and metrics.get("total_contributors", 0):
-        reasons.append("Single-contributor concentration")
-    elif bus_factor <= 3 and metrics.get("total_contributors", 0):
-        reasons.append("Low bus factor")
-    if health < 60:
-        reasons.append("Low overall health")
-    return reasons
-
-
 def _health_status(score: float):
     if score >= 80:
         return "HEALTHY", "good"
@@ -58,9 +37,37 @@ def _health_status(score: float):
 
 def _history_frame(repo_name: str) -> pd.DataFrame:
     snapshots = list(reversed(get_snapshots(repo_name, limit=30)))
-    if not snapshots:
-        return pd.DataFrame()
-    return pd.DataFrame(snapshots)
+    return pd.DataFrame(snapshots) if snapshots else pd.DataFrame()
+
+
+def _current_snapshot(analysis) -> dict:
+    metrics = analysis.metrics or {}
+    return {
+        "stars": analysis.repository.stars,
+        "forks": analysis.repository.forks,
+        "issues": metrics.get("open_issue_count", 0),
+        "pull_requests": metrics.get("open_pull_request_count", 0),
+        "contributors": metrics.get("total_contributors", 0),
+        "commits": metrics.get("recent_commit_count", 0),
+        "health": metrics.get("repository_health_score", 0),
+    }
+
+
+def _render_what_changed(analysis, previous):
+    st.markdown("### What changed")
+    if not previous:
+        st.info("This is the first comparison point. Re-scan the repository later to unlock change intelligence.")
+        return
+    trends = trend_summary(_current_snapshot(analysis), previous)
+    changed = [t for t in trends if t["change"] != 0]
+    if not changed:
+        st.success("No measured metrics changed since the previous scan.")
+        return
+    for t in changed:
+        symbol = "↑" if t["direction"] == "up" else "↓"
+        cls = "positive" if t["interpretation"] == "improved" else "negative"
+        pct = f"{t['pct']:+.1f}%" if t["pct"] is not None else "new"
+        st.markdown(f'<div class="change-row"><span class="change-symbol {cls}">{symbol}</span><strong>{t["label"]}</strong><span>{t["previous"]:,.1f} → {t["current"]:,.1f} · {pct}</span></div>', unsafe_allow_html=True)
 
 
 def _render_history(repo_name: str):
@@ -70,85 +77,31 @@ def _render_history(repo_name: str):
         return
 
     st.markdown("### Live history")
-    st.caption("Every analysis creates a timestamped snapshot, so trends update automatically as you re-scan the repository.")
+    st.caption("Every analysis creates a timestamped snapshot. Re-scan the repository to extend these trends.")
     chart_df = df.copy()
     chart_df["captured_at"] = pd.to_datetime(chart_df["captured_at"])
     chart_df = chart_df.set_index("captured_at")
-
     tab1, tab2, tab3 = st.tabs(["Health", "Development", "Community"])
     with tab1:
         st.line_chart(chart_df[["health_score"]].rename(columns={"health_score": "Health"}), use_container_width=True)
     with tab2:
-        dev = chart_df[["recent_commits", "open_pull_requests", "open_issues"]].rename(
-            columns={"recent_commits": "Recent commits", "open_pull_requests": "Open PRs", "open_issues": "Open issues"}
-        )
+        dev = chart_df[["recent_commits", "open_pull_requests", "open_issues"]].rename(columns={"recent_commits": "Recent commits", "open_pull_requests": "Open PRs", "open_issues": "Open issues"})
         st.line_chart(dev, use_container_width=True)
     with tab3:
-        # Normalize each series to its first observed value so unlike scales remain readable.
         community = chart_df[["stars", "forks", "contributors"]].copy()
         for col in community.columns:
             base = community[col].iloc[0]
-            community[col] = ((community[col] / base) * 100) if base else 0
+            community[col] = (community[col] / base * 100) if base else 0
         community.columns = ["Stars index", "Forks index", "Contributors index"]
         st.line_chart(community, use_container_width=True)
         st.caption("Community trends are indexed to the first stored snapshot (100 = starting level).")
-
-    st.dataframe(
-        df.rename(
-            columns={
-                "captured_at": "Captured", "stars": "Stars", "forks": "Forks", "open_issues": "Issues",
-                "open_pull_requests": "PRs", "contributors": "Contributors", "recent_commits": "Commits", "health_score": "Health",
-            }
-        )[["Captured", "Stars", "Forks", "Issues", "PRs", "Contributors", "Commits", "Health"]],
-        use_container_width=True,
-        hide_index=True,
-    )
-
-
-def _render_comparison():
-    st.markdown("### Repository comparison")
-    snapshots = st.session_state.get("repo_snapshots", {})
-    repos = list(snapshots.keys())
-    if len(repos) < 2:
-        st.info("Analyze at least two repositories in this session to unlock comparison.")
-        return
-
-    c1, c2 = st.columns(2)
-    with c1:
-        repo_a = st.selectbox("Repository A", repos, key="compare_a")
-    with c2:
-        repo_b = st.selectbox("Repository B", repos, index=min(1, len(repos) - 1), key="compare_b")
-    if repo_a == repo_b:
-        st.warning("Choose two different repositories.")
-        return
-
-    a, b = snapshots[repo_a], snapshots[repo_b]
-    rows = [
-        ("Stars", a["stars"], b["stars"], False),
-        ("Forks", a["forks"], b["forks"], False),
-        ("Open issues", a["issues"], b["issues"], True),
-        ("Open PRs", a["pull_requests"], b["pull_requests"], True),
-        ("Contributors", a["contributors"], b["contributors"], False),
-        ("Health", a["health"], b["health"], False),
-        ("Recent commits", a["commits"], b["commits"], False),
-    ]
-    display = []
-    for label, va, vb, inverse in rows:
-        if va == vb:
-            winner = "Tie"
-        else:
-            winner = repo_a if (va < vb if inverse else va > vb) else repo_b
-        display.append({"Metric": label, repo_a: va, repo_b: vb, "Leader": winner})
-    st.dataframe(pd.DataFrame(display), use_container_width=True, hide_index=True)
 
 
 def dashboard_page():
     analysis = st.session_state.get("repo_analysis")
     if analysis is None:
-        st.subheader("Dashboard", divider="blue")
-        st.info("Analyze a GitHub repository to turn this dashboard into a live intelligence view.")
-        st.markdown("#### What becomes dynamic")
-        st.markdown("- Health score and risk signals from the latest scan\n- Historical trends from every stored analysis\n- Contributor concentration and activity\n- Code-quality signals when a deep scan is enabled")
+        page_header("Workspace", "Repository intelligence", "Connect a GitHub repository to turn raw activity into a clear health and risk picture.")
+        empty_state("Your command center is waiting", "Analyze a repository from the Repository page. Once data is loaded, this view becomes your live health, trend and risk workspace.", "◈")
         return
 
     repo = analysis.repository
@@ -156,15 +109,15 @@ def dashboard_page():
     previous = st.session_state.get("previous_snapshot") or {}
     score = float(metrics.get("repository_health_score", 0) or 0)
     status, tone = _health_status(score)
+    result = assessment(metrics, previous)
 
-    st.subheader("Repository command center", divider="blue")
+    page_header("Live repository", "Repository command center", f"{repo.full_name} · scanned from GitHub telemetry")
     top1, top2 = st.columns([4, 1])
     with top1:
-        st.markdown(f"### {repo.full_name}")
-        st.caption(repo.description or "No repository description provided.")
+        st.markdown(f'<div class="hero-card"><div class="hero-title">{repo.full_name}</div><div class="hero-subtitle">{repo.description or "No repository description provided."}</div></div>', unsafe_allow_html=True)
     with top2:
         status_badge(status, tone)
-        st.metric("Health", f"{score:.1f}/100", delta=(f"{score - float(previous.get('health', score)):+.1f}" if previous else None))
+        st.metric("Health", f"{score:.1f}/100", delta=(f"{score - float(previous.get('health', score)):+.1f} pts" if previous else None))
 
     cards = [
         ("Stars", _fmt(repo.stars), _delta(repo.stars, previous.get("stars")), "GitHub popularity"),
@@ -175,37 +128,47 @@ def dashboard_page():
     cols = st.columns(4)
     for col, (title, value, delta, help_text) in zip(cols, cards):
         with col:
-            if delta:
-                metric_card(title, value, delta[0], help_text, delta[1])
-            else:
-                metric_card(title, value, None, help_text)
+            metric_card(title, value, delta[0] if delta else None, help_text, delta[1] if delta else "neutral")
 
     left, right = st.columns([1.05, 1])
     with left:
-        st.markdown("### Health breakdown")
+        section_header("Health breakdown", "Six dimensions combine into the overall repository score.")
         dimensions = metrics.get("health_dimensions", {}) or {}
         if dimensions:
             health_df = pd.DataFrame({"Dimension": list(dimensions.keys()), "Score": list(dimensions.values())}).set_index("Dimension")
             st.bar_chart(health_df, use_container_width=True)
     with right:
-        st.markdown("### Risk radar")
-        risks = _risk(metrics)
+        section_header("Risk radar", "Signals that deserve attention before they become problems.")
+        risks = detect_risks(metrics)
         if risks:
-            for risk in risks:
-                st.markdown(f'<div class="risk-row">⚠️ <span>{risk}</span></div>', unsafe_allow_html=True)
+            for risk in risks[:5]:
+                st.markdown(f'<div class="risk-row">⚠️ <strong>{risk.severity}</strong> · {risk.title}</div>', unsafe_allow_html=True)
+            if len(risks) > 5:
+                st.caption(f"{len(risks) - 5} additional signals available in Risk Center.")
         else:
             st.success("No major risk signals detected from the current metrics.")
-        st.markdown("### Recommended next action")
-        weakest = min((metrics.get("health_dimensions") or {}).items(), key=lambda item: item[1], default=("health", score))
-        actions = {
-            "activity": "Increase development cadence or investigate whether the repository is becoming inactive.",
-            "community": "Broaden participation and improve discoverability/documentation for contributors.",
-            "maintenance": "Prioritize stale maintenance work, unresolved PRs, and repository upkeep.",
-            "issue_health": "Triage the issue backlog and close stale or duplicate issues.",
-            "pr_health": "Review open pull requests and reduce review/merge bottlenecks.",
-            "contributor_health": "Reduce ownership concentration and strengthen contributor onboarding.",
-        }
-        st.info(actions.get(weakest[0], "Review the weakest health dimension."))
+
+    _render_what_changed(analysis, previous)
+
+    activity = metrics.get("activity_intelligence", {}) or {}
+    engineering = metrics.get("engineering_intelligence", {}) or {}
+    section_header("Engineering & activity pulse", "Recent development behaviour and engineering hygiene.")
+    p1, p2, p3, p4 = st.columns(4)
+    p1.metric("Activity", activity.get("status", "Unknown"), f"{activity.get('commit_trend_pct', 0):+.1f}% commit trend")
+    p2.metric("Engineering", f"{engineering.get('engineering_score', 0):.1f}/100")
+    p3.metric("Testing", f"{engineering.get('testing_score', 0):.1f}/100")
+    p4.metric("Documentation", f"{engineering.get('documentation_score', 0):.1f}/100")
+    st.caption(f"Last commit: {activity.get('last_commit_days_ago', 0)} days ago · {engineering.get('dependencies_observed', 0)} observed dependencies · {engineering.get('test_files', 0)} test files")
+
+    c1, c2 = st.columns(2)
+    with c1:
+        section_header("Assessment", "A plain-language interpretation of the latest scan.")
+        st.write(result["intro"])
+        insight_card("Primary improvement area", f"{result['weakest_dimension']}. {result["priorities"][0]}", "warning", "Priority")
+    with c2:
+        section_header("Repository pulse", "The core numbers behind this scan.")
+        st.metric("Contributors", f"{metrics.get('total_contributors', 0):,}")
+        st.metric("Bus factor", f"{metrics.get('bus_factor', 0):,}")
+        st.metric("Recent commits", f"{metrics.get('recent_commit_count', 0):,}")
 
     _render_history(repo.full_name)
-    _render_comparison()

@@ -292,3 +292,38 @@ For questions, issues, or feature requests, please open an issue on [GitHub Issu
 [⭐ Star us on GitHub](https://github.com/arjunajithan04/repopulse)
 
 </div>
+
+## Phase 4 — Repository Intelligence
+
+RepoPulse Phase 4 extends the dynamic dashboard into an explainable repository intelligence product:
+
+- **Risk Center** — critical/high/medium risk signals derived from live repository metrics.
+- **Repository Assessment** — automated executive summary, strengths, priorities, and risk summary.
+- **What Changed** — compares the latest scan with the previous session snapshot.
+- **Trend Intelligence** — persistent health/development/community history with normalized community trends.
+- **Comparison 2.0** — repository-to-repository comparison with metric-specific leader semantics.
+- **Live API telemetry** — API rate-limit information remains visible after scans.
+- **No extra runtime dependencies** — Phase 4 uses the existing Streamlit/Pandas stack.
+
+### Important interpretation note
+
+The assessment and risk engine are **rule-based and explainable**, not an external LLM. Every insight can be traced to RepoPulse's measured metrics and configured thresholds. Code quality indicators remain bounded/heuristic where language-specific AST parsing is unavailable.
+
+## 🧠 Phase 5 Intelligence
+
+RepoPulse now adds an engineering and performance intelligence layer:
+
+- Cached GitHub requests with a short TTL and explicit live-refresh invalidation
+- Repository tree inventory on every analysis
+- Commit activity intelligence: active days, recent-vs-previous 30-day trend, last commit age, and activity status
+- Engineering intelligence for documentation, testing, and dependency manifests
+- Dependency manifest inspection for common ecosystems without claiming vulnerability results
+- Testing signals based on repository test-file structure
+- Documentation signals for README, LICENSE, CONTRIBUTING, and docs directories
+- Engineering pulse surfaced on the Repository and Dashboard pages
+- New risk signals for stale activity, declining commits, limited testing, and weak documentation
+- Historical snapshots now retain engineering, documentation, testing, and dependency indicators
+
+### Performance behavior
+
+Repository metadata, contributors, pull requests, issues, languages, commits, repository trees, and individual file contents use a 5-minute Streamlit cache. Selecting **Refresh live data** invalidates the cached inputs for that repository while preserving historical snapshots.
