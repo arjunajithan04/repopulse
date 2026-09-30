@@ -162,7 +162,7 @@ def repository_page():
     st.session_state.setdefault("repository_input", "microsoft/vscode")
     st.session_state.setdefault("repo_cache_nonce", 0)
     if st.session_state.pop("repository_focus", None) == "scan":
-        st.markdown('<div class="rp-callout good"><div class="rp-callout-icon">↗</div><div><div class="rp-callout-title">Scan workspace</div><div class="rp-callout-body">Use the repository controls below to run a fresh GitHub analysis. Deep scan can be enabled when code-level intelligence is needed.</div></div></div>', unsafe_allow_html=True)
+        st.html('<div class="rp-callout good"><div class="rp-callout-icon">↗</div><div><div class="rp-callout-title">Scan workspace</div><div class="rp-callout-body">Use the repository controls below to run a fresh GitHub analysis. Deep scan can be enabled when code-level intelligence is needed.</div></div></div>')
 
     col1, col2 = st.columns([4, 1])
     with col1:
@@ -238,7 +238,7 @@ def repository_page():
     if core and core.get("remaining") is not None and core.get("limit"):
         remaining, limit = core["remaining"], core["limit"]
         tone = "good" if remaining / limit > .25 else "warning" if remaining / limit > .1 else "danger"
-        st.markdown(f'<span class="status-badge {tone}">API {remaining:,} / {limit:,} requests remaining</span>', unsafe_allow_html=True)
+        st.html(f'<span class="status-badge {tone}">API {remaining:,} / {limit:,} requests remaining</span>')
 
     repo = analysis.repository
     metrics = analysis.metrics or {}

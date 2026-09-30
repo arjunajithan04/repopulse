@@ -41,7 +41,7 @@ def risk_center_page():
     for idx, risk in enumerate(filtered):
         tone = {"Critical": "danger", "High": "danger", "Medium": "warning", "Low": "good"}.get(risk.severity, "neutral")
         with st.expander(f"{risk.severity} · {risk.title}", expanded=idx == 0):
-            st.markdown(f'<div class="risk-card {tone}"><div class="risk-card-top"><span class="status-badge {tone}">{risk.severity}</span><strong>{risk.title}</strong></div><div class="risk-detail">{risk.detail}</div><div class="risk-action">Recommended action: {risk.recommendation}</div></div>', unsafe_allow_html=True)
+            st.html(f'<div class="risk-card {tone}"><div class="risk-card-top"><span class="status-badge {tone}">{risk.severity}</span><strong>{risk.title}</strong></div><div class="risk-detail">{risk.detail}</div><div class="risk-action">Recommended action: {risk.recommendation}</div></div>')
             if st.button("Focus this risk", key=f"focus_risk_{idx}"):
                 set_focus("risk", risk.title, "Risk Center")
                 st.rerun()

@@ -39,7 +39,7 @@ def metric_card(
             points.append(f"{x:.1f},{y:.1f}")
         spark_html = f'<svg class="metric-spark" viewBox="0 0 100 24" preserveAspectRatio="none" aria-hidden="true"><polyline points="{" ".join(points)}" /></svg>'
 
-    st.markdown(
+    st.html(
         f"""
         <div class="metric-card rp-metric {html.escape(delta_class)}">
             <div class="metric-top">
@@ -54,14 +54,12 @@ def metric_card(
             {progress_html}
             <div class="metric-help">{html.escape(str(help_text or ""))}</div>
         </div>
-        """,
-        unsafe_allow_html=True,
+        """
     )
 
 
 def status_badge(label: str, tone: str = "neutral"):
     safe_tone = tone if tone in {"good", "warning", "danger", "neutral"} else "neutral"
-    st.markdown(
-        f'<span class="status-badge {safe_tone}"><span class="status-dot"></span>{html.escape(label)}</span>',
-        unsafe_allow_html=True,
+    st.html(
+        f'<span class="status-badge {safe_tone}"><span class="status-dot"></span>{html.escape(label)}</span>'
     )

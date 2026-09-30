@@ -16,13 +16,13 @@ def render_health_orb(score: float, status: str, delta: float | None = None):
     circumference = 339.3
     dash = circumference * safe_score / 100
     delta_html = "Baseline scan" if delta is None else f"{delta:+.1f} pts since last scan"
-    st.markdown(
+    st.html(
         f"""
         <div class="health-orb-card">
             <div class="health-orb-glow {tone}"></div>
-            <svg class="health-orb" viewBox="0 0 128 128" aria-label="Health score {safe_score:.0f} out of 100">
-                <circle class="orb-track" cx="64" cy="64" r="54"></circle>
-                <circle class="orb-value {tone}" cx="64" cy="64" r="54" stroke-dasharray="{dash:.1f} {circumference:.1f}"></circle>
+            <svg class="health-orb" viewBox="0 0 128 128" role="img" aria-label="Health score {safe_score:.0f} out of 100">
+                <circle class="orb-track" cx="64" cy="64" r="54" fill="none"></circle>
+                <circle class="orb-value {tone}" cx="64" cy="64" r="54" fill="none" stroke-dasharray="{dash:.1f} {circumference:.1f}"></circle>
             </svg>
             <div class="health-orb-content">
                 <div class="health-orb-score">{safe_score:.0f}</div>
@@ -32,14 +32,13 @@ def render_health_orb(score: float, status: str, delta: float | None = None):
             <div class="health-orb-delta">{html.escape(delta_html)}</div>
         </div>
         """,
-        unsafe_allow_html=True,
     )
 
 
 def render_spotlight(title: str, body: str, detail: str = "", tone: str = "neutral", eyebrow: str = "Repo spotlight"):
     safe_tone = _tone(tone)
-    detail_html = f'<div class="cinematic-detail">{detail}</div>' if detail else ""
-    st.markdown(
+    detail_html = f'<div class="cinematic-detail">{html.escape(str(detail))}</div>' if detail else ""
+    st.html(
         f"""
         <div class="cinematic-spotlight {safe_tone}">
             <div class="spotlight-orbit"></div>
@@ -49,7 +48,6 @@ def render_spotlight(title: str, body: str, detail: str = "", tone: str = "neutr
             {detail_html}
         </div>
         """,
-        unsafe_allow_html=True,
     )
 
 
@@ -60,4 +58,4 @@ def render_telemetry_strip(items: Iterable[tuple[str, str, str]]):
         blocks.append(
             f'<div class="telemetry-item"><span class="telemetry-label">{html.escape(label)}</span><span class="telemetry-value {safe_tone}">{html.escape(value)}</span></div>'
         )
-    st.markdown(f'<div class="telemetry-strip">{"".join(blocks)}</div>', unsafe_allow_html=True)
+    st.html(f'<div class="telemetry-strip">{"".join(blocks)}</div>')

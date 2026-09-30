@@ -58,9 +58,8 @@ def render_focus_bar() -> None:
         return
     label = FOCUS_LABELS.get(kind, kind.replace("_", " ").title())
     source = st.session_state.rp_focus_source or "workspace"
-    st.markdown(
-        f'''<div class="rp-focus-bar"><div><span class="rp-focus-kicker">FOCUS</span><span class="rp-focus-label">{html.escape(label)}</span><span class="rp-focus-value">{html.escape(str(value))}</span><span class="rp-focus-source">from {html.escape(source)}</span></div></div>''',
-        unsafe_allow_html=True,
+    st.html(
+        f'''<div class="rp-focus-bar"><div><span class="rp-focus-kicker">FOCUS</span><span class="rp-focus-label">{html.escape(label)}</span><span class="rp-focus-value">{html.escape(str(value))}</span><span class="rp-focus-source">from {html.escape(source)}</span></div></div>'''
     )
     if st.button("Clear focus", key="rp_clear_focus", help="Return all views to their default context"):
         clear_focus()

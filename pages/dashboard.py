@@ -71,9 +71,8 @@ def _render_what_changed(analysis, previous):
         symbol = "↑" if t["direction"] == "up" else "↓"
         cls = "positive" if t["interpretation"] == "improved" else "negative"
         pct = f"{t['pct']:+.1f}%" if t["pct"] is not None else "new"
-        st.markdown(
-            f'<div class="change-row"><span class="change-symbol {cls}">{symbol}</span><strong>{html.escape(t["label"])}</strong><span>{t["previous"]:,.1f} → {t["current"]:,.1f} · {pct}</span></div>',
-            unsafe_allow_html=True,
+        st.html(
+            f'<div class="change-row"><span class="change-symbol {cls}">{symbol}</span><strong>{html.escape(t["label"])}</strong><span>{t["previous"]:,.1f} → {t["current"]:,.1f} · {pct}</span></div>'
         )
 
 
@@ -112,7 +111,7 @@ def _render_repo_hero(repo, score: float, status: str, tone: str, previous: dict
     safe_branch = html.escape(branch)
     safe_language = html.escape(language)
     github_url = f"https://github.com/{repo.full_name}"
-    st.markdown(
+    st.html(
         f"""
         <div class="repo-hero">
             <div class="repo-hero-glow"></div>
@@ -134,8 +133,7 @@ def _render_repo_hero(repo, score: float, status: str, tone: str, previous: dict
                 <a class="repo-link" href="{html.escape(github_url)}" target="_blank" rel="noopener noreferrer">Open on GitHub ↗</a>
             </div>
         </div>
-        """,
-        unsafe_allow_html=True,
+        """
     )
 
 
@@ -195,23 +193,18 @@ def dashboard_page():
     with pulse_left:
         dimensions = metrics.get("health_dimensions", {}) or {}
         if dimensions:
-            st.markdown('<div class="health-panel">', unsafe_allow_html=True)
             render_health_radar(dimensions, height=300)
             for name, dimension_score in dimensions.items():
                 health_dimension(str(name), float(dimension_score or 0))
-            st.markdown("</div>", unsafe_allow_html=True)
         else:
             st.info("No health dimension data is available for this scan.")
     with pulse_right:
         if risks:
-            st.markdown('<div class="risk-stack">', unsafe_allow_html=True)
             for risk in risks[:3]:
                 risk_cls = "danger" if risk.severity in {"Critical", "High"} else "warning"
-                st.markdown(
-                    f'<div class="mini-risk {risk_cls}"><span class="mini-risk-dot"></span><div><strong>{html.escape(risk.title)}</strong><span>{html.escape(risk.severity)}</span></div></div>',
-                    unsafe_allow_html=True,
+                st.html(
+                    f'<div class="mini-risk {risk_cls}"><span class="mini-risk-dot"></span><div><strong>{html.escape(risk.title)}</strong><span>{html.escape(risk.severity)}</span></div></div>'
                 )
-            st.markdown("</div>", unsafe_allow_html=True)
         else:
             st.success("No major risk signals detected from the current metrics.")
 

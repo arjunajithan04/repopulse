@@ -59,7 +59,7 @@ def assessment_page():
     else:
         report_lines.append("- No major risks detected.")
     report_text = "\n".join(report_lines)
-    st.markdown('<div class="report-toolbar"><div class="report-toolbar-copy"><strong>Executive report</strong>Export this assessment as Markdown for project documentation or review.</div></div>', unsafe_allow_html=True)
+    st.html('<div class="report-toolbar"><div class="report-toolbar-copy"><strong>Executive report</strong>Export this assessment as Markdown for project documentation or review.</div></div>')
     st.download_button(
         "Download assessment report",
         data=report_text,
@@ -86,7 +86,7 @@ def assessment_page():
             pct = f" ({trend['pct']:+.1f}%)" if trend["pct"] is not None else ""
             symbol = "↑" if trend["direction"] == "up" else "↓"
             tone_text = "positive" if trend["interpretation"] == "improved" else "negative"
-            st.markdown(f'<div class="change-row"><span class="change-symbol {tone_text}">{symbol}</span><strong>{trend["label"]}</strong><span>{trend["previous"]:,.1f} → {trend["current"]:,.1f}{pct}</span></div>', unsafe_allow_html=True)
+            st.html(f'<div class="change-row"><span class="change-symbol {tone_text}">{symbol}</span><strong>{trend["label"]}</strong><span>{trend["previous"]:,.1f} → {trend["current"]:,.1f}{pct}</span></div>')
 
     st.markdown("### Risk summary")
     if result["risks"]:
