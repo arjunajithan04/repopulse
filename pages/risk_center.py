@@ -3,7 +3,7 @@ from __future__ import annotations
 import streamlit as st
 
 from components.ui import page_header, empty_state
-
+from components.interaction import set_focus
 from analysis.intelligence import detect_risks
 
 
@@ -31,6 +31,17 @@ def risk_center_page():
         st.success("No major risk signals were detected from the current metrics.")
         return
 
-    for risk in risks:
+    st.markdown("### Risk drill-down")
+    severity_filter = st.multiselect("Severity", ["Critical", "High", "Medium", "Low"], default=["Critical", "High", "Medium", "Low"], key="phase5_risk_severity")
+    filtered = [r for r in risks if r.severity in severity_filter]
+    if not filtered:
+        st.info("No risks match the selected severity filters.")
+        return
+
+    for idx, risk in enumerate(filtered):
         tone = {"Critical": "danger", "High": "danger", "Medium": "warning", "Low": "good"}.get(risk.severity, "neutral")
-        st.markdown(f'<div class="risk-card {tone}"><div class="risk-card-top"><span class="status-badge {tone}">{risk.severity}</span><strong>{risk.title}</strong></div><div class="risk-detail">{risk.detail}</div><div class="risk-action">Recommended action: {risk.recommendation}</div></div>', unsafe_allow_html=True)
+        with st.expander(f"{risk.severity} · {risk.title}", expanded=idx == 0):
+            st.markdown(f'<div class="risk-card {tone}"><div class="risk-card-top"><span class="status-badge {tone}">{risk.severity}</span><strong>{risk.title}</strong></div><div class="risk-detail">{risk.detail}</div><div class="risk-action">Recommended action: {risk.recommendation}</div></div>', unsafe_allow_html=True)
+            if st.button("Focus this risk", key=f"focus_risk_{idx}"):
+                set_focus("risk", risk.title, "Risk Center")
+                st.rerun()

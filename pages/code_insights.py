@@ -3,6 +3,13 @@ from __future__ import annotations
 import pandas as pd
 import streamlit as st
 
+from components.interaction import get_focus, set_focus
+
+try:
+    import plotly.express as px
+except ImportError:  # pragma: no cover
+    px = None
+
 
 def _quality_label(score: float) -> str:
     if score >= 80:
@@ -10,6 +17,22 @@ def _quality_label(score: float) -> str:
     if score >= 60:
         return "Moderate"
     return "Needs attention"
+
+
+def _render_codebase_map(df: pd.DataFrame):
+    if df.empty:
+        return
+    map_df = df.copy()
+    map_df["lines"] = pd.to_numeric(map_df.get("lines", 0), errors="coerce").fillna(0)
+    map_df["complexity"] = pd.to_numeric(map_df.get("complexity", 0), errors="coerce").fillna(0)
+    map_df["language"] = map_df.get("language", "Unknown").fillna("Unknown")
+    map_df = map_df[map_df["lines"] > 0].head(80)
+    if px is not None and not map_df.empty:
+        fig = px.treemap(map_df, path=["language", "file"], values="lines", color="complexity", color_continuous_scale="Purples", hover_data={"lines": True, "complexity": True})
+        fig.update_layout(height=500, margin=dict(l=4, r=4, t=10, b=4), paper_bgcolor="rgba(0,0,0,0)", font=dict(color="#d9deea"))
+        st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
+    else:
+        st.dataframe(map_df[["file", "language", "lines", "complexity"]], use_container_width=True, hide_index=True)
 
 
 def code_insights_page():
@@ -57,6 +80,10 @@ def code_insights_page():
 
         files = code.get("files", [])
         if files:
+            st.markdown("### Codebase complexity map")
+            st.caption("Tile size represents lines of code; intensity represents measured complexity. Click a file below to inspect its evidence.")
+            _render_codebase_map(pd.DataFrame(files))
+
             st.markdown("### File explorer")
             df = pd.DataFrame(files)
             languages_filter = ["All"] + sorted(df["language"].dropna().unique().tolist()) if "language" in df else ["All"]
@@ -66,6 +93,7 @@ def code_insights_page():
             with f2:
                 selected_language = st.selectbox("Language", languages_filter)
             filtered = df.copy()
+            focus_file = get_focus("file")
             if query:
                 filtered = filtered[filtered["file"].str.contains(query, case=False, na=False)]
             if selected_language != "All" and "language" in filtered:
@@ -74,6 +102,23 @@ def code_insights_page():
             if sort_by in filtered.columns:
                 filtered = filtered.sort_values(sort_by, ascending=False)
             st.dataframe(filtered, use_container_width=True, hide_index=True)
+
+            options = filtered["file"].tolist() if "file" in filtered else []
+            if focus_file in options:
+                selected_file = st.selectbox("Inspect file", options, index=options.index(focus_file), key="phase5_file_select")
+            else:
+                selected_file = st.selectbox("Inspect file", options, key="phase5_file_select") if options else None
+            if selected_file:
+                row = df[df["file"] == selected_file].iloc[0]
+                i1, i2, i3, i4 = st.columns(4)
+                i1.metric("Lines", int(row.get("lines", 0)))
+                i2.metric("Complexity", row.get("complexity", 0))
+                i3.metric("Language", row.get("language", "Unknown"))
+                i4.metric("Functions", int(row.get("functions", 0)))
+                if st.button("Focus this file", key="focus_code_file"):
+                    set_focus("file", selected_file, "Code Insights")
+                    st.rerun()
+                st.caption("File-level source content remains bounded by the existing scan limits.")
 
         left, right = st.columns(2)
         with left:
@@ -104,21 +149,12 @@ def code_insights_page():
     recommendations = []
     health = float(metrics.get("repository_health_score", 0) or 0)
     if health < 70:
-        recommendations.append("Review the weakest repository-health dimension and prioritize maintenance work there.")
-    if metrics.get("open_issue_count", 0) > 20:
-        recommendations.append("Triage the open-issue backlog and identify stale or duplicate issues.")
-    if metrics.get("open_pull_request_count", 0) > 15:
-        recommendations.append("Review the pull-request backlog and prioritize stale PRs.")
-    if code:
-        if code.get("avg_complexity", 0) > 8:
-            recommendations.append("Inspect high-complexity files and decompose large functions.")
-        if code.get("comment_ratio", 0) < 5:
-            recommendations.append("Improve documentation around complex or core modules.")
-        if code.get("avg_file_lines", 0) > 400:
-            recommendations.append("Review large files for opportunities to split responsibilities into smaller modules.")
+        recommendations.append("Review the weakest repository-health dimension before expanding scope.")
+    if code and float(code.get("avg_complexity", 0) or 0) >= 10:
+        recommendations.append("Inspect the highest-complexity files and split large functions into smaller units.")
+    if code and float(code.get("comment_ratio", 0) or 0) < 10:
+        recommendations.append("Consider adding documentation around complex or public-facing logic.")
     if not recommendations:
-        recommendations.append("No major quality action is indicated by the currently available signals.")
-    for item in dict.fromkeys(recommendations):
-        st.markdown(f"- {item}")
-
-    st.caption("RepoPulse only displays static-analysis metrics when it actually scanned repository files. Non-Python complexity is heuristic; test coverage, duplication, vulnerabilities, and dependency health are not inferred unless measured explicitly.")
+        recommendations.append("No immediate code-quality action is suggested by the current bounded scan.")
+    for item in recommendations:
+        st.info(item)

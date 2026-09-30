@@ -3,6 +3,7 @@ from __future__ import annotations
 import streamlit as st
 
 from components.ui import page_header, empty_state
+from components.cinematic import render_health_orb, render_spotlight
 
 from analysis.intelligence import assessment
 
@@ -21,13 +22,51 @@ def assessment_page():
     page_header("Intelligence", "Repository Assessment", "A plain-language assessment built from measured RepoPulse signals.")
     st.caption(f"Automated, explainable assessment based on RepoPulse metrics for {repo.full_name}.")
 
-    left, right = st.columns([1, 2])
+    previous = st.session_state.get("previous_snapshot") or {}
+    delta_score = result["score"] - float(previous.get("health", result["score"])) if previous else None
+    left, right = st.columns([.9, 1.6])
     with left:
-        st.markdown(f'<div class="assessment-score"><div class="score-ring">{result["score"]:.0f}</div><div class="assessment-status {tone}">{result["status"]}</div><div class="assessment-caption">Health score / 100</div></div>', unsafe_allow_html=True)
+        render_health_orb(result["score"], result["status"], delta_score)
     with right:
-        st.markdown("### Executive summary")
-        st.write(result["intro"])
-        st.info(f"Weakest measured dimension: **{result['weakest_dimension']}**")
+        render_spotlight(
+            result["status"],
+            result["intro"],
+            f"Weakest measured dimension: {result['weakest_dimension']}",
+            tone,
+            "Executive signal",
+        )
+
+    report_lines = [
+        f"# RepoPulse Assessment — {repo.full_name}",
+        "",
+        f"**Health score:** {result['score']:.1f}/100 · **Status:** {result['status']}",
+        "",
+        "## Executive summary",
+        result["intro"],
+        "",
+        f"**Weakest measured dimension:** {result['weakest_dimension']}",
+        "",
+        "## Strengths",
+        *[f"- {item}" for item in result["strengths"]],
+        "",
+        "## Priority actions",
+        *[f"- {item}" for item in result["priorities"]],
+        "",
+        "## Risk summary",
+    ]
+    if result["risks"]:
+        report_lines.extend(f"- **{risk.severity}: {risk.title}** — {risk.detail}" for risk in result["risks"][:6])
+    else:
+        report_lines.append("- No major risks detected.")
+    report_text = "\n".join(report_lines)
+    st.markdown('<div class="report-toolbar"><div class="report-toolbar-copy"><strong>Executive report</strong>Export this assessment as Markdown for project documentation or review.</div></div>', unsafe_allow_html=True)
+    st.download_button(
+        "Download assessment report",
+        data=report_text,
+        file_name=f"repopulse-{repo.full_name.replace('/', '-')}-assessment.md",
+        mime="text/markdown",
+        use_container_width=True,
+    )
 
     c1, c2 = st.columns(2)
     with c1:

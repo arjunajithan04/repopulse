@@ -5,6 +5,8 @@ import streamlit as st
 
 from analysis.predictive import forecast_summary
 from components.ui import page_header, empty_state
+from components.cinematic import render_health_orb, render_spotlight
+from components.charts import render_health_trajectory
 
 
 def predictive_page():
@@ -23,14 +25,17 @@ def predictive_page():
     pred = result["prediction"]
     tone = "danger" if pred.label == "High" else "warning" if pred.label == "Moderate" else "good"
 
-    left, right = st.columns([1, 1.6])
+    left, right = st.columns([.9, 1.6])
     with left:
-        st.markdown(f'<div class="assessment-score"><div class="score-ring">{pred.probability:.0f}</div><div class="assessment-status {tone}">{pred.label} risk</div><div class="assessment-caption">Estimated probability / directional score</div></div>', unsafe_allow_html=True)
+        render_health_orb(pred.probability, f"{pred.label} risk", None)
     with right:
-        st.markdown("### Near-term repository outlook")
-        st.write(f"**Method:** {pred.method} · **Confidence:** {pred.confidence} · **Horizon:** {pred.horizon}")
-        st.write(f"RepoPulse currently estimates **{pred.label.lower()} maintenance risk** for **{repo}**.")
-        st.caption(f"Historical snapshots available: {result['snapshots']}")
+        render_spotlight(
+            f"{pred.label} maintenance signal",
+            f"RepoPulse currently estimates {pred.label.lower()} maintenance risk for {repo}.",
+            f"Method: {pred.method} · Confidence: {pred.confidence} · Horizon: {pred.horizon} · {result['snapshots']} snapshots",
+            tone,
+            "Directional outlook",
+        )
 
     c1, c2 = st.columns(2)
     c1.metric("Health trend", f"{result['health_trend']:+.1f} pts / snapshot")
@@ -45,8 +50,8 @@ def predictive_page():
 
     st.markdown("### Historical health")
     if snapshots:
-        rows = [{"Captured": x.get("captured_at", ""), "Health": x.get("health_score", 0), "Commits": x.get("recent_commits", 0), "Contributors": x.get("contributors", 0)} for x in reversed(snapshots)]
-        st.line_chart(pd.DataFrame(rows).set_index("Captured"), use_container_width=True)
+        rows = [{"captured_at": x.get("captured_at", ""), "health_score": x.get("health_score", 0)} for x in reversed(snapshots)]
+        render_health_trajectory(pd.DataFrame(rows), height=320)
 
     st.markdown("### Model limitations")
     for item in pred.limitations:

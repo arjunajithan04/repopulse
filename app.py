@@ -1,4 +1,5 @@
 import streamlit as st
+import html
 
 from pages.dashboard import dashboard_page
 from pages.repository import repository_page
@@ -8,6 +9,7 @@ from pages.risk_center import risk_center_page
 from pages.assessment import assessment_page
 from pages.compare import compare_page
 from pages.predictive import predictive_page
+from components.interaction import init_interaction_state, render_focus_bar
 
 
 st.set_page_config(
@@ -33,13 +35,13 @@ st.markdown(
     html,body,[data-testid="stAppViewContainer"],[data-testid="stApp"]{background:var(--bg);color:var(--text)}
     .stApp{background:radial-gradient(circle at 8% -4%,rgba(139,92,246,.12),transparent 25%),radial-gradient(circle at 95% 5%,rgba(99,102,241,.07),transparent 22%),linear-gradient(180deg,#080a0f 0%,#0a0d13 100%)}
     [data-testid="stHeader"]{background:transparent}
-    [data-testid="stSidebar"]{background:rgba(9,12,17,.96);backdrop-filter:blur(18px);border-right:1px solid var(--line);width:245px!important;min-width:245px!important;max-width:245px!important}
+    [data-testid="stSidebarNav"]{display:none!important}[data-testid="stSidebar"]{background:rgba(9,12,17,.96);backdrop-filter:blur(18px);border-right:1px solid var(--line);width:245px!important;min-width:245px!important;max-width:245px!important}
     [data-testid="stSidebarContent"]{padding:1.25rem .85rem}
     .sidebar-brand{display:flex;align-items:center;gap:.65rem;font-size:1.12rem;font-weight:850;letter-spacing:-.045em;margin:.2rem .35rem .1rem}
     .sidebar-logo{width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,var(--primary),var(--primary-2));box-shadow:0 8px 24px rgba(99,102,241,.25);font-size:.72rem;font-weight:900;color:white}
     .sidebar-subtitle{font-size:.61rem;color:var(--muted-2);letter-spacing:.14em;text-transform:uppercase;margin:.1rem .4rem 1.3rem}
     .sidebar-section{font-size:.59rem;color:#596476;text-transform:uppercase;letter-spacing:.14em;margin:1.1rem .45rem .4rem}
-    .stRadio>div{gap:.2rem}.stRadio [role="radio"]{border:1px solid transparent;border-radius:10px;padding:.55rem .68rem;color:var(--muted);transition:all .2s ease}.stRadio [role="radio"]:hover{background:rgba(255,255,255,.035);border-color:var(--line);transform:translateX(2px)}.stRadio [role="radio"][aria-checked="true"]{color:#fff;background:linear-gradient(90deg,rgba(139,92,246,.16),rgba(99,102,241,.07));border-color:rgba(139,92,246,.25);box-shadow:inset 2px 0 0 var(--primary)}
+    .stRadio>div{gap:.2rem}.stRadio [role="radio"]{display:flex;align-items:center;width:100%;box-sizing:border-box;border:1px solid transparent;border-radius:10px;padding:.55rem .68rem;color:var(--muted);transition:all .2s ease;font-size:.76rem;font-weight:650}.stRadio [role="radio"]:hover{background:rgba(255,255,255,.035);border-color:var(--line);transform:translateX(2px)}.stRadio [role="radio"][aria-checked="true"]{color:#fff;background:linear-gradient(90deg,rgba(139,92,246,.18),rgba(99,102,241,.07));border-color:rgba(139,92,246,.27);box-shadow:inset 2px 0 0 var(--primary),0 8px 24px rgba(0,0,0,.10)}
     .sidebar-status{margin-top:1rem;padding:.75rem;border:1px solid var(--line);border-radius:12px;background:linear-gradient(145deg,rgba(255,255,255,.035),rgba(255,255,255,.012));animation:fadeUp .45s ease both}.sidebar-status-label{font-size:.57rem;color:var(--muted-2);text-transform:uppercase;letter-spacing:.12em}.sidebar-status-name{font-size:.76rem;font-weight:700;margin-top:.3rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.sidebar-live{display:flex;align-items:center;gap:.38rem;font-size:.67rem;color:var(--success);margin-top:.65rem}.live-dot{width:6px;height:6px;border-radius:50%;background:var(--success);box-shadow:0 0 0 4px rgba(52,211,153,.09);animation:livePulse 2s infinite}
     .topbar{display:flex;justify-content:space-between;align-items:center;padding:.2rem 0 .85rem;border-bottom:1px solid var(--line);margin-bottom:1rem}.eyebrow{font-size:.62rem;font-weight:800;color:#8f9bad;text-transform:uppercase;letter-spacing:.15em;margin-bottom:.25rem}.page-title{font-size:2.05rem!important;letter-spacing:-.06em;margin:0!important;line-height:1.08}.page-description{color:var(--muted);font-size:.84rem;margin-top:.38rem;line-height:1.55;max-width:800px}
     .global-hero{position:relative;overflow:hidden;padding:1.15rem 1.35rem;border:1px solid var(--line);border-radius:16px;background:linear-gradient(135deg,rgba(17,21,29,.96),rgba(12,15,21,.94));margin-bottom:1.25rem;animation:fadeUp .45s ease both}.global-hero:after{content:"";position:absolute;width:220px;height:220px;right:-100px;top:-130px;background:radial-gradient(circle,rgba(139,92,246,.20),transparent 68%);pointer-events:none}.hero-kicker{font-size:.58rem;text-transform:uppercase;letter-spacing:.14em;color:var(--muted-2)}.hero-title{font-size:1.3rem;font-weight:780;letter-spacing:-.045em;margin-top:.18rem}.hero-subtitle{color:var(--muted);font-size:.78rem;margin-top:.3rem;line-height:1.45}.hero-meta{display:flex;gap:.5rem;align-items:center;margin-top:.75rem}.hero-meta-pill{font-size:.61rem;color:#b6c0cf;border:1px solid var(--line);border-radius:999px;padding:.28rem .5rem;background:rgba(255,255,255,.025)}
@@ -56,6 +58,8 @@ st.markdown(
     @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}@keyframes scoreIn{from{opacity:0;transform:scale(.86) rotate(-12deg)}to{opacity:1;transform:scale(1) rotate(0)}}@keyframes livePulse{0%,100%{box-shadow:0 0 0 3px rgba(52,211,153,.08)}50%{box-shadow:0 0 0 6px rgba(52,211,153,.02)}}
     @media(max-width:900px){[data-testid="stSidebar"],[data-testid="stSidebar"]:hover{width:215px!important;min-width:215px!important;max-width:215px!important}.page-title{font-size:1.65rem!important}.metric-card{min-height:110px}}
     @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
+
+    .rp-focus-bar{display:flex;align-items:center;padding:.55rem .8rem;margin:-.35rem 0 1rem;border:1px solid rgba(139,92,246,.22);border-radius:10px;background:linear-gradient(90deg,rgba(139,92,246,.10),rgba(99,102,241,.035));box-shadow:0 8px 24px rgba(0,0,0,.10);animation:fadeUp .35s ease both}.rp-focus-kicker{font-size:.54rem;color:var(--primary);font-weight:850;letter-spacing:.14em;margin-right:.55rem}.rp-focus-label{font-size:.64rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-right:.35rem}.rp-focus-value{font-size:.72rem;color:#fff;font-weight:750}.rp-focus-source{font-size:.59rem;color:var(--muted-2);margin-left:.45rem}
     </style>
     """, unsafe_allow_html=True)
 
@@ -81,6 +85,7 @@ def _init_state():
 
 
 _init_state()
+init_interaction_state()
 
 pages = {
     "Dashboard": dashboard_page,
@@ -97,26 +102,99 @@ with st.sidebar:
     st.markdown('<div class="sidebar-brand"><span class="sidebar-logo">RP</span> RepoPulse</div>', unsafe_allow_html=True)
     st.markdown('<div class="sidebar-subtitle">Repository intelligence</div>', unsafe_allow_html=True)
 
-    icon_options = ["📊", "📁", "👥", "🧠", "🚨", "🤖", "⚖️", "🔮"]
-    icon_page_map = {"📊": "Dashboard", "📁": "Repository", "👥": "Contributors", "🧠": "Code Insights", "🚨": "Risk Center", "🤖": "Assessment", "⚖️": "Compare", "🔮": "Predictive Risk"}
-    selected_icon = st.radio(
-        "Navigation",
-        icon_options,
-        index=0,
-        label_visibility="collapsed",
-    )
-    selected_page = icon_page_map.get(selected_icon, "Dashboard")
+    # Phase 5-B: restore the Phase 2 grouped navigation and active-state highlights.
+    # The custom navigation remains the single source of truth; Streamlit's native
+    # multipage navigation is hidden above.
+    st.session_state.setdefault("nav_page", "Dashboard")
 
-    st.markdown("<hr style='border-color:rgba(255,255,255,.06)'>", unsafe_allow_html=True)
+    def _set_nav(widget_key: str):
+        value = st.session_state.get(widget_key, "")
+        if value:
+            page = value.split("  ", 1)[1] if "  " in value else value
+            st.session_state.nav_page = page
+
+    command_options = [
+        "📊  Dashboard",
+        "📁  Repository",
+        "👥  Contributors",
+        "🧠  Code Insights",
+    ]
+    intelligence_options = [
+        "🚨  Risk Center",
+        "🤖  Assessment",
+        "⚖️  Compare",
+        "🔮  Predictive Risk",
+    ]
+
+    current_page = st.session_state.nav_page
+
+    st.markdown('<div class="sidebar-section">Command center</div>', unsafe_allow_html=True)
+    command_index = next((i for i, item in enumerate(command_options) if item.endswith(current_page)), None)
+    if command_index is None:
+        st.session_state.command_nav = None
+    st.radio(
+        "Command center",
+        command_options,
+        index=command_index,
+        label_visibility="collapsed",
+        key="command_nav",
+        on_change=_set_nav,
+        args=("command_nav",),
+    )
+
+    # Re-read the state so the active highlight follows a selection immediately.
+    current_page = st.session_state.nav_page
+    st.markdown('<div class="sidebar-section">Intelligence</div>', unsafe_allow_html=True)
+    intel_index = next((i for i, item in enumerate(intelligence_options) if item.endswith(current_page)), None)
+    if intel_index is None:
+        st.session_state.intel_nav = None
+    st.radio(
+        "Intelligence",
+        intelligence_options,
+        index=intel_index,
+        label_visibility="collapsed",
+        key="intel_nav",
+        on_change=_set_nav,
+        args=("intel_nav",),
+    )
+
+    selected_page = st.session_state.nav_page
+
+    st.markdown('<div class="sidebar-section">Workspace</div>', unsafe_allow_html=True)
     if st.session_state.current_repo:
-        st.markdown(f'''<div class="sidebar-status"><div class="sidebar-status-label">Active repository</div><div class="sidebar-status-name">{st.session_state.current_repo}</div><div class="sidebar-live"><span class="live-dot"></span>Telemetry connected</div></div>''', unsafe_allow_html=True)
+        repo_label = html.escape(st.session_state.current_repo)
+        scans = st.session_state.repo_session_count
+        last_scan = st.session_state.get("last_refresh")
+        last_scan_html = (
+            f'<div class="sidebar-meta"><span>Last scan</span><span class="sidebar-count">{html.escape(str(last_scan))}</span></div>'
+            if last_scan
+            else ""
+        )
+        sidebar_html = (
+            f'<div class="sidebar-status">'
+            f'<div class="sidebar-status-label">Active repository</div>'
+            f'<div class="sidebar-status-name">{repo_label}</div>'
+            f'<div class="sidebar-live"><span class="live-dot"></span>Telemetry connected</div>'
+            f'<div class="sidebar-meta"><span>Session scans</span><span class="sidebar-count">{scans}/10</span></div>'
+            f'{last_scan_html}'
+            f'</div>'
+        )
+        st.markdown(sidebar_html, unsafe_allow_html=True)
     else:
-        st.markdown('<div class="sidebar-status"><div class="sidebar-status-label">Workspace</div><div class="sidebar-status-name">No repository selected</div></div>', unsafe_allow_html=True)
-    st.caption(f"{st.session_state.repo_session_count}/10 analyses this session")
+        st.markdown(
+            '<div class="sidebar-status">'
+            '<div class="sidebar-status-label">Workspace</div>'
+            '<div class="sidebar-status-name">No repository selected</div>'
+            '<div class="sidebar-meta"><span>Session scans </span><span class="sidebar-count">0/10</span></div>'
+            '</div>',
+            unsafe_allow_html=True,
+        )
+
     if st.session_state.get("last_refresh"):
         st.caption(f"Last scan · {st.session_state.last_refresh}")
 
 current_repo = st.session_state.get("current_repo")
+
 hero_title = f"{current_repo} intelligence" if current_repo else "Repository Intelligence Dashboard"
 hero_subtitle = (
     "Live repository telemetry is loaded. Re-scan to update metrics, compare against history, and surface what changed."
@@ -138,5 +216,6 @@ st.markdown(
     """,
     unsafe_allow_html=True,
 )
+render_focus_bar()
 
 pages[selected_page]()

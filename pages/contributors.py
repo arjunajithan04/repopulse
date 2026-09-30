@@ -3,9 +3,28 @@ from __future__ import annotations
 import pandas as pd
 import streamlit as st
 
+from components.interaction import get_focus, set_focus
+
+try:
+    import plotly.express as px
+except ImportError:  # pragma: no cover
+    px = None
+
 
 def _score(person: dict) -> float:
     return round(person["commits"] + person["prs"] * 3 + person["issues"] * 1.5, 1)
+
+
+def _activity_matrix(people: list[dict]) -> pd.DataFrame:
+    rows = []
+    for p in people[:12]:
+        rows.append({
+            "Contributor": p["name"],
+            "Contributions": p["commits"],
+            "Pull requests": p["prs"],
+            "Issues": p["issues"],
+        })
+    return pd.DataFrame(rows).set_index("Contributor")
 
 
 def contributors_page():
@@ -58,6 +77,26 @@ def contributors_page():
         rows.append({"Rank": rank, "Contributor": p["name"], "Commits": p["commits"], "PRs": p["prs"], "Issues": p["issues"], "Score": p["score"], "Share": f"{share:.1f}%"})
     st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
 
+    st.markdown("### Contributor activity map")
+    st.caption("A compact view of where the visible contributor activity is concentrated. Select a person to carry that context across the workspace.")
+    matrix = _activity_matrix(people)
+    if px is not None and not matrix.empty:
+        fig = px.imshow(matrix, aspect="auto", color_continuous_scale="Purples", labels={"x": "Activity", "y": "Contributor", "color": "Count"})
+        fig.update_layout(height=max(300, min(560, 110 + 28 * len(matrix))), margin=dict(l=10, r=10, t=20, b=10), paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font=dict(color="#d9deea"))
+        fig.update_xaxes(showgrid=False)
+        fig.update_yaxes(showgrid=False)
+        st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
+    else:
+        st.dataframe(matrix, use_container_width=True)
+
+    selected_default = get_focus("contributor")
+    names = [p["name"] for p in people]
+    selected_index = names.index(selected_default) if selected_default in names else 0
+    selected = st.selectbox("Focus contributor", names, index=selected_index, key="contributor_focus_select")
+    if st.button("Focus this contributor", key="focus_contributor"):
+        set_focus("contributor", selected, "Contributors")
+        st.rerun()
+
     st.markdown("### Top contributors")
     top_people = people[:6]
     card_cols = st.columns(min(3, len(top_people)))
@@ -82,7 +121,6 @@ def contributors_page():
         st.bar_chart(mix, x="Activity", y="Count", use_container_width=True)
 
     st.markdown("### Contributor explorer")
-    selected = st.selectbox("Select a contributor", [p["name"] for p in people])
     person = next(p for p in people if p["name"] == selected)
     share = (person["score"] / total_score * 100) if total_score else 0
     if person.get("avatar"):
