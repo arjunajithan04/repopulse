@@ -293,9 +293,9 @@ For questions, issues, or feature requests, please open an issue on [GitHub Issu
 
 </div>
 
-## Phase 4 — Repository Intelligence
+## Repository Intelligence
 
-RepoPulse Phase 4 extends the dynamic dashboard into an explainable repository intelligence product:
+It extends the dynamic dashboard into an explainable repository intelligence product:
 
 - **Risk Center** — critical/high/medium risk signals derived from live repository metrics.
 - **Repository Assessment** — automated executive summary, strengths, priorities, and risk summary.
@@ -303,13 +303,13 @@ RepoPulse Phase 4 extends the dynamic dashboard into an explainable repository i
 - **Trend Intelligence** — persistent health/development/community history with normalized community trends.
 - **Comparison 2.0** — repository-to-repository comparison with metric-specific leader semantics.
 - **Live API telemetry** — API rate-limit information remains visible after scans.
-- **No extra runtime dependencies** — Phase 4 uses the existing Streamlit/Pandas stack.
+- **No extra runtime dependencies** — uses the existing Streamlit/Pandas stack.
 
 ### Important interpretation note
 
 The assessment and risk engine are **rule-based and explainable**, not an external LLM. Every insight can be traced to RepoPulse's measured metrics and configured thresholds. Code quality indicators remain bounded/heuristic where language-specific AST parsing is unavailable.
 
-## 🧠 Phase 5 Intelligence
+## 🧠 Intelligence
 
 RepoPulse now adds an engineering and performance intelligence layer:
 

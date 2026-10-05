@@ -849,7 +849,7 @@ This modular design enables:
 - ✅ Smooth user experience with instant feedback
 
 
-## Phase 4 intelligence layer
+## Intelligence layer
 
 `analysis/intelligence.py` centralizes explainable product-level intelligence so the UI pages do not duplicate business rules.
 
@@ -874,6 +874,6 @@ Each risk has severity, evidence, and a recommended action.
 ### Comparison engine
 `compare_snapshots(...)` compares repositories with metric-specific semantics: higher is better for health/activity/community signals, while lower is better for open issues and PRs.
 
-## Phase 5 architecture
+## Architecture
 
 `analysis/activity.py` contains commit-window and recency analysis. `analysis/engineering.py` inventories documentation, testing structure, and common dependency manifests. The repository page uses Streamlit's cache layer for GitHub reads and passes a repository-specific refresh nonce so normal rerenders do not repeatedly call the API while an explicit refresh retrieves new data. Engineering metrics are intentionally evidence-based and do not claim package vulnerability status or test coverage when those signals have not been measured.

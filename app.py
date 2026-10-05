@@ -796,7 +796,7 @@ st.markdown(
       color: var(--muted-2);
       margin-left: 0.45rem;
     }
-    /* Phase 5-B.1 visual integrity layer: styles for the cinematic and repository components. */
+    /* 1. Visual integrity layer: styles for the cinematic and repository components. */
     [data-testid="stMetric"] {
       padding: 0.9rem 1rem;
       border: 1px solid var(--line);
@@ -1496,7 +1496,6 @@ with st.sidebar:
     st.markdown('<div class="sidebar-brand"><span class="sidebar-logo">RP</span> RepoPulse</div>', unsafe_allow_html=True)
     st.markdown('<div class="sidebar-subtitle">Repository intelligence</div>', unsafe_allow_html=True)
 
-    # Phase 5-B: restore the Phase 2 grouped navigation and active-state highlights.
     # The custom navigation remains the single source of truth; Streamlit's native
     # multipage navigation is hidden above.
     st.session_state.setdefault("nav_page", "Dashboard")
