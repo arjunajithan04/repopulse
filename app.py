@@ -1657,7 +1657,7 @@ def render_repository_scan_loader(repository: str = "", refresh: bool = False):
           <div class="rp-scan-grid"></div>
           <div class="rp-scan-content">
             <div class="rp-scan-brand">REPOPULSE</div>
-            <div class="rp-scan-kicker">REPOSITORY INTELLIGENCE</div>
+            <div class="rp-scan-kicker">INTELLIGENT REPO VISUALIZER</div>
             <div class="rp-pulse-orb">
               <div class="rp-pulse-ring rp-ring-1"></div>
               <div class="rp-pulse-ring rp-ring-2"></div>
