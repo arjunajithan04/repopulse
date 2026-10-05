@@ -1,4 +1,5 @@
 import streamlit as st
+import base64
 import html
 
 from pages.dashboard import dashboard_page
@@ -10,7 +11,6 @@ from pages.assessment import assessment_page
 from pages.compare import compare_page
 from pages.predictive import predictive_page
 from components.interaction import init_interaction_state, render_focus_bar
-from components.loading import scan_styles
 
 
 st.set_page_config(
@@ -91,17 +91,18 @@ st.markdown(
       margin: 0.2rem 0.35rem 0.1rem;
     }
     .sidebar-logo {
-      width: 30px;
-      height: 30px;
-      border-radius: 9px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: linear-gradient(135deg, var(--primary), var(--primary-2));
-      box-shadow: 0 8px 24px rgba(99, 102, 241, 0.25);
-      font-size: 0.72rem;
-      font-weight: 900;
-      color: white;
+      width: 34px;
+      height: 34px;
+      flex: 0 0 34px;
+      display: block;
+      object-fit: contain;
+      border-radius: 10px;
+      filter: drop-shadow(0 6px 14px rgba(99, 102, 241, 0.28));
+      transition: transform 0.22s ease, filter 0.22s ease;
+    }
+    .sidebar-brand:hover .sidebar-logo {
+      transform: scale(1.06) rotate(-2deg);
+      filter: drop-shadow(0 8px 20px rgba(139, 92, 246, 0.4));
     }
     .sidebar-subtitle {
       font-size: 0.61rem;
@@ -1461,7 +1462,146 @@ st.markdown(
 # -----------------------------------------------------------------------------
 # Shared session state
 # -----------------------------------------------------------------------------
-st.markdown(scan_styles(), unsafe_allow_html=True)
+
+
+st.markdown(
+    """
+    <style>
+    .rp-scan-screen {
+      position: relative; min-height: 78vh; margin: -1rem -1rem 0;
+      overflow: hidden; display:flex; align-items:center; justify-content:center;
+      background: radial-gradient(circle at 50% 40%,rgba(112,88,255,.14),transparent 30%),
+                  radial-gradient(circle at 20% 80%,rgba(65,105,225,.08),transparent 28%),#07070b;
+      border:1px solid rgba(255,255,255,.07); border-radius:24px; isolation:isolate;
+    }
+    .rp-scan-grid { position:absolute; inset:0; opacity:.22;
+      background-image:linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px),
+                       linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px);
+      background-size:42px 42px; mask-image:radial-gradient(circle at center,#000,transparent 78%);
+      animation:rp-grid-drift 12s linear infinite;
+    }
+    .rp-scan-content { position:relative; z-index:2; width:min(620px,88%); text-align:center;
+      animation:rp-fade-up .7s ease both;
+    }
+    .rp-scan-brand { font-size:1.65rem; font-weight:800; letter-spacing:.24em; color:#f6f5ff; }
+    .rp-scan-kicker { margin-top:.35rem; font-size:.68rem; letter-spacing:.28em; color:rgba(190,185,255,.62); }
+    .rp-pulse-orb { position:relative; width:150px; height:150px; margin:2.5rem auto 1.7rem;
+      display:grid; place-items:center; }
+    .rp-pulse-core { position:relative; z-index:4; width:46px; height:46px; display:grid;
+      place-items:center; border-radius:50%; color:#fff; background:radial-gradient(circle at 35% 30%,#c9c2ff,#7765ff 48%,#3f2fa5);
+      box-shadow:0 0 36px rgba(116,97,255,.65),0 0 90px rgba(116,97,255,.2);
+      animation:rp-core-pulse 1.8s ease-in-out infinite;
+    }
+    .rp-pulse-ring { position:absolute; inset:25px; border:1px solid rgba(139,124,255,.5);
+      border-radius:50%; animation:rp-ring 2.4s ease-out infinite; }
+    .rp-ring-2 { animation-delay:.8s; } .rp-ring-3 { animation-delay:1.6s; }
+    .rp-scan-title { font-size:.76rem; letter-spacing:.22em; font-weight:700; color:#f0eff8; }
+    .rp-scan-repo { margin-top:.55rem; font: .85rem ui-monospace,SFMono-Regular,Menlo,monospace;
+      color:rgba(224,222,240,.56); overflow:hidden; text-overflow:ellipsis; }
+    .rp-scan-progress { width:100%; height:3px; margin:1.7rem auto .8rem; overflow:hidden;
+      border-radius:99px; background:rgba(255,255,255,.07); }
+    .rp-scan-progress span { display:block; width:46%; height:100%; border-radius:inherit;
+      background:linear-gradient(90deg,#6554ff,#9a8fff,#6554ff); background-size:180% 100%;
+      box-shadow:0 0 18px rgba(111,91,255,.55); animation:rp-progress 2.2s ease-in-out infinite; }
+    .rp-scan-stage { display:flex; justify-content:center; align-items:center; gap:.55rem;
+      min-height:22px; color:rgba(235,233,247,.78); font-size:.76rem; }
+    .rp-scan-stage i { width:6px; height:6px; border-radius:50%; background:#8d7dff;
+      box-shadow:0 0 12px rgba(141,125,255,.9); animation:rp-dot 1s ease-in-out infinite; }
+    .rp-scan-steps { margin:1.5rem auto 0; display:grid; grid-template-columns:repeat(2,1fr);
+      gap:.55rem; text-align:left; }
+    .rp-scan-steps div { padding:.62rem .75rem; border:1px solid rgba(255,255,255,.055);
+      border-radius:10px; background:rgba(255,255,255,.018); color:rgba(221,219,235,.52);
+      font-size:.63rem; letter-spacing:.08em; }
+    .rp-scan-steps b { color:rgba(151,139,255,.72); font: .58rem ui-monospace,monospace; margin-right:.55rem; }
+    .rp-scan-terminal { margin:1.2rem auto 0; padding:.8rem .95rem; text-align:left;
+      border:1px solid rgba(255,255,255,.055); border-radius:12px; background:rgba(0,0,0,.22);
+      font:.65rem/1.65 ui-monospace,SFMono-Regular,Menlo,monospace; color:rgba(170,165,195,.48); }
+    @keyframes rp-ring { 0%{transform:scale(.65);opacity:.8} 80%,100%{transform:scale(1.55);opacity:0} }
+    @keyframes rp-core-pulse { 0%,100%{transform:scale(.94)} 50%{transform:scale(1.08)} }
+    @keyframes rp-progress { 0%{transform:translateX(-110%)} 50%{transform:translateX(70%)} 100%{transform:translateX(190%)} }
+    @keyframes rp-dot { 0%,100%{opacity:.35;transform:scale(.8)} 50%{opacity:1;transform:scale(1.15)} }
+    @keyframes rp-grid-drift { from{transform:translate(0,0)} to{transform:translate(42px,42px)} }
+    @keyframes rp-fade-up { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+    @media(max-width:700px){ .rp-scan-screen{min-height:84vh;border-radius:18px}.rp-scan-steps{grid-template-columns:1fr} }
+    @media(prefers-reduced-motion:reduce){
+      .rp-scan-grid,.rp-pulse-core,.rp-pulse-ring,.rp-scan-progress span,.rp-scan-stage i,.rp-scan-content{animation:none!important}
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
+
+def maybe_show_scan_preview():
+    try:
+        if st.query_params.get("scan_preview") == "1":
+            render_repository_scan_loader("github.com/owner/repository")
+            st.stop()
+    except Exception:
+        pass
+
+def render_repository_scan_loader(repository: str = "", refresh: bool = False):
+    """RepoPulse cinematic repository-scan loading experience."""
+    import html as _html
+    repo_label = _html.escape(repository or "repository")
+    mode_label = "REFRESHING REPOSITORY" if refresh else "INITIALIZING REPOSITORY"
+    st.markdown(
+        f"""
+        <div class="rp-scan-screen" role="status" aria-live="polite">
+          <div class="rp-scan-grid"></div>
+          <div class="rp-scan-content">
+            <div class="rp-scan-brand">REPOPULSE</div>
+            <div class="rp-scan-kicker">REPOSITORY INTELLIGENCE</div>
+            <div class="rp-pulse-orb">
+              <div class="rp-pulse-ring rp-ring-1"></div>
+              <div class="rp-pulse-ring rp-ring-2"></div>
+              <div class="rp-pulse-ring rp-ring-3"></div>
+              <div class="rp-pulse-core">●</div>
+            </div>
+            <div class="rp-scan-title">{mode_label}</div>
+            <div class="rp-scan-repo">{repo_label}</div>
+            <div class="rp-scan-progress"><span></span></div>
+            <div class="rp-scan-stage"><i></i><span id="rp-stage-text">Connecting to GitHub</span></div>
+            <div class="rp-scan-steps">
+              <div><b>01</b> CONNECTING TO GITHUB</div>
+              <div><b>02</b> FETCHING REPOSITORY SIGNALS</div>
+              <div><b>03</b> ANALYZING ACTIVITY</div>
+              <div><b>04</b> MAPPING ENGINEERING HEALTH</div>
+              <div><b>05</b> IDENTIFYING RISKS</div>
+              <div><b>06</b> GENERATING INTELLIGENCE</div>
+            </div>
+            <div class="rp-scan-terminal">
+              <div>&gt; repopulse.init()</div>
+              <div>&gt; establishing telemetry channel...</div>
+              <div>&gt; preparing repository intelligence...</div>
+            </div>
+          </div>
+        </div>
+        <script>
+        (() => {{
+          const stages = [
+            "Connecting to GitHub",
+            "Fetching repository signals",
+            "Analyzing activity",
+            "Mapping engineering health",
+            "Identifying risks",
+            "Generating intelligence"
+          ];
+          let i = 0, el = document.getElementById("rp-stage-text");
+          if (!el) return;
+          setInterval(() => {{
+            i = (i + 1) % stages.length;
+            el.style.opacity = "0";
+            setTimeout(() => {{
+              el.textContent = stages[i];
+              el.style.opacity = "1";
+            }}, 160);
+          }}, 900);
+        }})();
+        </script>
+        """,
+        unsafe_allow_html=True,
+    )
 
 def _init_state():
     defaults = {
@@ -1496,7 +1636,13 @@ pages = {
 }
 
 with st.sidebar:
-    st.markdown('<div class="sidebar-brand"><span class="sidebar-logo">RP</span> RepoPulse</div>', unsafe_allow_html=True)
+    with open("assets/final-logo.png", "rb") as _logo_file:
+        _logo_b64 = base64.b64encode(_logo_file.read()).decode()
+
+    st.markdown(
+        f'<div class="sidebar-brand"><img class="sidebar-logo" src="data:image/png;base64,{_logo_b64}" alt="RepoPulse logo"><span>RepoPulse</span></div>',
+        unsafe_allow_html=True,
+    )
     st.markdown('<div class="sidebar-subtitle">Repository intelligence</div>', unsafe_allow_html=True)
 
     # The custom navigation remains the single source of truth; Streamlit's native
