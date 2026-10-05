@@ -1865,4 +1865,3 @@ else:
     )
     render_focus_bar()
     pages[selected_page]()
-
