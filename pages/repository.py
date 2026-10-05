@@ -9,6 +9,7 @@ from analysis.engineering import analyze_engineering
 from analysis.repository_analysis import analyze_repository, parse_repository_input
 from core.github_client import GitHubAPIError, GitHubClient
 from data.history import get_snapshots, init_db, save_snapshot
+from components.loading import render_scan_loader
 
 MAX_ANALYSES = 10
 MAX_CODE_FILES = 60
@@ -185,33 +186,28 @@ def repository_page():
             nonce = st.session_state.repo_cache_nonce
             repo_owner, repo_name = parse_repository_input(_normalize_repository_input(repository))
             client = GitHubClient()
-            progress = st.progress(0, text="Connecting to GitHub…")
+            scan = st.empty()
+            render_scan_loader(scan, f"{repo_owner}/{repo_name}", 4, "Connecting to GitHub", "Establishing a secure GitHub telemetry channel…")
             repo_data = _cached_repository(repo_owner, repo_name, nonce)
-            progress.progress(16, text="Loading repository metadata…")
+            render_scan_loader(scan, f"{repo_owner}/{repo_name}", 16, "Loading repository metadata", "Repository identity and baseline metadata received.", {"stars": repo_data.get("stargazers_count", 0), "forks": repo_data.get("forks_count", 0), "branch": repo_data.get("default_branch", "main")})
             contributors_data = _cached_contributors(repo_owner, repo_name, nonce)
-            progress.progress(29, text="Loading contributors…")
+            render_scan_loader(scan, f"{repo_owner}/{repo_name}", 29, "Loading contributors", f"Mapped {len(contributors_data or [])} contributor records.", {"contributors": len(contributors_data or [])})
             pull_requests_data = _cached_prs(repo_owner, repo_name, nonce)
-            progress.progress(42, text="Loading pull requests…")
+            render_scan_loader(scan, f"{repo_owner}/{repo_name}", 42, "Loading pull requests", f"Collected {len(pull_requests_data or [])} pull-request records.", {"pull requests": len(pull_requests_data or [])})
             issues_data = _cached_issues(repo_owner, repo_name, nonce)
-            progress.progress(55, text="Loading issues…")
+            render_scan_loader(scan, f"{repo_owner}/{repo_name}", 55, "Loading issues", f"Collected {len(issues_data or [])} issue records.", {"issues": len(issues_data or [])})
             languages_data = _cached_languages(repo_owner, repo_name, nonce)
-            progress.progress(66, text="Loading languages and activity…")
+            render_scan_loader(scan, f"{repo_owner}/{repo_name}", 66, "Loading languages and activity", f"Detected {len(languages_data or {})} languages.", {"languages": len(languages_data or {})})
             commits_data = _cached_commits(repo_owner, repo_name, repo_data.get("default_branch", "main"), nonce)
-            progress.progress(76, text="Building repository inventory…")
+            render_scan_loader(scan, f"{repo_owner}/{repo_name}", 76, "Building repository inventory", f"Observed {len(commits_data or [])} recent commits.", {"commits": len(commits_data or [])})
             tree_data = _cached_tree(repo_owner, repo_name, repo_data.get("default_branch", "main"), nonce)
-            progress.progress(84, text="Calculating engineering intelligence…")
+            render_scan_loader(scan, f"{repo_owner}/{repo_name}", 84, "Calculating engineering intelligence", f"Indexed {len(tree_data or [])} tree entries.", {"files": len(tree_data or [])})
             analysis = analyze_repository(repo_data, contributors_data, languages_data, issues_data, pull_requests_data, commits_data, tree_data=tree_data)
-
             engineering, code_metrics = _prepare_scan(tree_data, repo_owner, repo_name, analysis.repository.default_branch or "main", nonce, deep_scan)
             analysis.metrics["engineering_intelligence"] = engineering
             if deep_scan:
                 analysis.metrics["code_analysis"] = code_metrics
-            progress.progress(94, text="Checking API capacity…")
-            try:
-                st.session_state.api_rate_limit = client.get_rate_limit()
-            except Exception:
-                st.session_state.api_rate_limit = None
-
+            render_scan_loader(scan, f"{repo_owner}/{repo_name}", 94, "Checking API capacity", "Validating GitHub API capacity and scan health…", {"deep scan": "on" if deep_scan else "off"})
             snapshot = _snapshot(analysis)
             full_name = f"{repo_owner}/{repo_name}"
             st.session_state.previous_snapshot = st.session_state.repo_snapshots.get(full_name)
@@ -222,9 +218,14 @@ def repository_page():
             st.session_state.current_repo = full_name
             st.session_state.repo_analysis = analysis
             st.session_state.repo_snapshots[full_name] = snapshot
-            progress.progress(100, text="Analysis complete")
+            render_scan_loader(scan, full_name, 100, "Finalizing repository intelligence", "Repository intelligence is ready. Entering the workspace…", {"health": f"{snapshot.get('health', 0):.1f}/100", "scan": f"{st.session_state.repo_session_count + 1}/{MAX_ANALYSES}"}, completed=True)
+            import time
+            time.sleep(0.45)
+            scan.empty()
             st.success(f"Analyzed {full_name} · {st.session_state.repo_session_count}/{MAX_ANALYSES} this session")
         except Exception as exc:
+            if 'scan' in locals():
+                scan.empty()
             st.error(_friendly_error(exc))
             return
 

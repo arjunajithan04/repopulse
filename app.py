@@ -10,6 +10,7 @@ from pages.assessment import assessment_page
 from pages.compare import compare_page
 from pages.predictive import predictive_page
 from components.interaction import init_interaction_state, render_focus_bar
+from components.loading import scan_styles
 
 
 st.set_page_config(
@@ -1460,6 +1461,8 @@ st.markdown(
 # -----------------------------------------------------------------------------
 # Shared session state
 # -----------------------------------------------------------------------------
+st.markdown(scan_styles(), unsafe_allow_html=True)
+
 def _init_state():
     defaults = {
         "repo_analysis": None,

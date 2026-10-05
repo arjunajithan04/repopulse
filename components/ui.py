@@ -8,7 +8,7 @@ def page_header(eyebrow: str, title: str, description: str = "", action=None):
     c1, c2 = st.columns([5.5, 1], vertical_alignment="bottom")
     with c1:
         st.html(
-            f'<div class="eyebrow">{html.escape(eyebrow)}</div><h1 class="page-title">{html.escape(title)}</h1>'
+            f'<div class="rp-page-heading"><div class="eyebrow">{html.escape(eyebrow)}</div><h1 class="page-title">{html.escape(title)}</h1></div>'
         )
         if description:
             st.html(

@@ -41,7 +41,8 @@ def metric_card(
 
     st.html(
         f"""
-        <div class="metric-card rp-metric {html.escape(delta_class)}">
+        <div class="metric-card rp-metric {html.escape(delta_class)}" role="group" aria-label="{html.escape(str(title))}: {html.escape(str(value))}">
+            <div class="metric-accent"></div>
             <div class="metric-top">
                 <div class="metric-label">{html.escape(str(title))}</div>
                 <div class="metric-icon">{html.escape(icon)}</div>
