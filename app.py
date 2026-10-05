@@ -1772,7 +1772,7 @@ with st.sidebar:
         f'<div class="sidebar-brand"><img class="sidebar-logo" src="data:image/png;base64,{_logo_b64}" alt="RepoPulse logo"><span>RepoPulse</span></div>',
         unsafe_allow_html=True,
     )
-    st.markdown('<div class="sidebar-subtitle">Repository intelligence</div>', unsafe_allow_html=True)
+    st.markdown('<div class="sidebar-subtitle">Intelligent Repo Visualizer</div>', unsafe_allow_html=True)
 
     workspace_unlocked = bool(st.session_state.get("current_repo") and st.session_state.get("repo_analysis"))
     st.session_state.setdefault("nav_page", "Repository")
