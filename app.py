@@ -1753,7 +1753,7 @@ if not workspace_unlocked:
         """
         <div class="onboarding-shell">
           <div class="onboarding-kicker">RepoPulse workspace</div>
-          <div class="onboarding-title">Connect a repository to unlock RepoPulse.</div>
+          <div class="onboarding-title">Connect Repo. Unlock RepoPulse.</div>
           <div class="onboarding-copy">Start by providing a public GitHub repository URL or an <strong>owner/repository</strong> name. Once the repository is successfully analyzed, the dashboard, contributor intelligence, code insights, risk analysis, assessment, comparison and predictive features become available.</div>
           <div class="onboarding-steps">
             <div class="onboarding-step"><div class="onboarding-step-num">01</div><div class="onboarding-step-title">Connect</div><div class="onboarding-step-copy">Enter the GitHub repository you want RepoPulse to understand.</div></div>
