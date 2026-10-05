@@ -11,6 +11,7 @@ from pages.assessment import assessment_page
 from pages.compare import compare_page
 from pages.predictive import predictive_page
 from components.interaction import init_interaction_state, render_focus_bar
+from components.loading import scan_styles
 
 
 st.set_page_config(
@@ -104,6 +105,23 @@ st.markdown(
       transform: scale(1.06) rotate(-2deg);
       filter: drop-shadow(0 8px 20px rgba(139, 92, 246, 0.4));
     }
+    .sidebar-lock-card { margin-top:.8rem; padding:.85rem .78rem; border:1px solid rgba(139,92,246,.18); border-radius:12px; background:linear-gradient(145deg,rgba(139,92,246,.08),rgba(255,255,255,.015)); }
+    .sidebar-lock-title { font-size:.68rem; font-weight:800; color:#e8e2ff; }
+    .sidebar-lock-copy { margin-top:.28rem; font-size:.62rem; line-height:1.45; color:var(--muted); }
+    .sidebar-locked-item { display:flex; align-items:center; gap:.55rem; padding:.48rem .55rem; color:#566173; font-size:.72rem; font-weight:650; border-radius:9px; }
+    .sidebar-locked-item + .sidebar-locked-item { margin-top:.12rem; }
+    .sidebar-locked-icon { width:17px; height:17px; display:inline-flex; align-items:center; justify-content:center; border:1px solid rgba(255,255,255,.08); border-radius:50%; font-size:.52rem; color:#697486; }
+    .onboarding-shell { position:relative; overflow:hidden; padding:2rem 2rem 1.8rem; border:1px solid var(--line); border-radius:20px; background:linear-gradient(145deg,rgba(17,21,29,.97),rgba(10,13,19,.98)); box-shadow:var(--shadow); animation:fadeUp .5s ease both; }
+    .onboarding-shell:before { content:''; position:absolute; width:360px; height:360px; right:-160px; top:-190px; background:radial-gradient(circle,rgba(139,92,246,.18),transparent 68%); pointer-events:none; }
+    .onboarding-kicker { color:var(--primary); font-size:.62rem; font-weight:850; text-transform:uppercase; letter-spacing:.16em; }
+    .onboarding-title { margin-top:.35rem; font-size:2.1rem; font-weight:820; letter-spacing:-.06em; max-width:760px; }
+    .onboarding-copy { margin-top:.55rem; color:var(--muted); font-size:.86rem; line-height:1.6; max-width:760px; }
+    .onboarding-steps { display:grid; grid-template-columns:repeat(3,1fr); gap:.7rem; margin-top:1.35rem; }
+    .onboarding-step { padding:.85rem; border:1px solid var(--line); border-radius:12px; background:rgba(255,255,255,.018); }
+    .onboarding-step-num { color:var(--primary); font:700 .62rem ui-monospace,SFMono-Regular,Menlo,monospace; }
+    .onboarding-step-title { margin-top:.32rem; font-size:.73rem; font-weight:750; color:#e7ebf2; }
+    .onboarding-step-copy { margin-top:.22rem; font-size:.62rem; line-height:1.45; color:var(--muted-2); }
+    @media(max-width:700px){ .onboarding-shell{padding:1.35rem}.onboarding-title{font-size:1.65rem}.onboarding-steps{grid-template-columns:1fr} }
     .sidebar-subtitle {
       font-size: 0.61rem;
       color: var(--muted-2);
@@ -1615,6 +1633,9 @@ def _init_state():
         "api_rate_limit": None,
         "last_refresh": None,
         "auto_refresh": False,
+        "pending_scan": None,
+        "scan_active": False,
+        "scan_error": None,
     }
     for key, value in defaults.items():
         if key not in st.session_state:
@@ -1623,6 +1644,26 @@ def _init_state():
 
 _init_state()
 init_interaction_state()
+
+# A repository scan is a dedicated application state.  Do this before the
+# sidebar and normal page navigation are rendered so the user sees a true
+# full-screen scan experience rather than a loader embedded in Repository.
+if st.session_state.get("scan_active"):
+    from pages.repository import run_active_scan
+    st.markdown(scan_styles(), unsafe_allow_html=True)
+    st.markdown(
+        """<style>
+        [data-testid="stSidebar"] { display: none !important; }
+        [data-testid="stSidebarCollapsedControl"] { display: none !important; }
+        [data-testid="stHeader"] { display: none !important; }
+        [data-testid="stToolbar"] { display: none !important; }
+        [data-testid="stAppViewContainer"] { margin: 0 !important; }
+        [data-testid="stMainBlockContainer"] { max-width: none !important; padding: 0 !important; }
+        </style>""",
+        unsafe_allow_html=True,
+    )
+    run_active_scan()
+    st.stop()
 
 pages = {
     "Dashboard": dashboard_page,
@@ -1645,9 +1686,8 @@ with st.sidebar:
     )
     st.markdown('<div class="sidebar-subtitle">Repository intelligence</div>', unsafe_allow_html=True)
 
-    # The custom navigation remains the single source of truth; Streamlit's native
-    # multipage navigation is hidden above.
-    st.session_state.setdefault("nav_page", "Dashboard")
+    workspace_unlocked = bool(st.session_state.get("current_repo") and st.session_state.get("repo_analysis"))
+    st.session_state.setdefault("nav_page", "Repository")
 
     def _set_nav(widget_key: str):
         value = st.session_state.get(widget_key, "")
@@ -1655,107 +1695,86 @@ with st.sidebar:
             page = value.split("  ", 1)[1] if "  " in value else value
             st.session_state.nav_page = page
 
-    command_options = [
-        "📊  Dashboard",
-        "📁  Repository",
-        "👥  Contributors",
-        "🧠  Code Insights",
-    ]
-    intelligence_options = [
-        "🚨  Risk Center",
-        "🤖  Assessment",
-        "⚖️  Compare",
-        "🔮  Predictive Risk",
-    ]
+    command_options = ["📊  Dashboard", "📁  Repository", "👥  Contributors", "🧠  Code Insights"]
+    intelligence_options = ["🚨  Risk Center", "🤖  Assessment", "⚖️  Compare", "🔮  Predictive Risk"]
 
-    current_page = st.session_state.nav_page
-
-    st.markdown('<div class="sidebar-section">Command center</div>', unsafe_allow_html=True)
-    command_index = next((i for i, item in enumerate(command_options) if item.endswith(current_page)), None)
-    if command_index is None:
-        st.session_state.command_nav = None
-    st.radio(
-        "Command center",
-        command_options,
-        index=command_index,
-        label_visibility="collapsed",
-        key="command_nav",
-        on_change=_set_nav,
-        args=("command_nav",),
-    )
-
-    # Re-read the state so the active highlight follows a selection immediately.
-    current_page = st.session_state.nav_page
-    st.markdown('<div class="sidebar-section">Intelligence</div>', unsafe_allow_html=True)
-    intel_index = next((i for i, item in enumerate(intelligence_options) if item.endswith(current_page)), None)
-    if intel_index is None:
-        st.session_state.intel_nav = None
-    st.radio(
-        "Intelligence",
-        intelligence_options,
-        index=intel_index,
-        label_visibility="collapsed",
-        key="intel_nav",
-        on_change=_set_nav,
-        args=("intel_nav",),
-    )
-
-    selected_page = st.session_state.nav_page
+    if not workspace_unlocked:
+        st.session_state.nav_page = "Repository"
+        st.markdown('<div class="sidebar-section">Get started</div>', unsafe_allow_html=True)
+        st.radio("Get started", ["📁  Repository"], index=0, label_visibility="collapsed", key="locked_repository_nav")
+        st.markdown(
+            '<div class="sidebar-lock-card"><div class="sidebar-lock-title">🔒 Workspace locked</div>'
+            '<div class="sidebar-lock-copy">Analyze a GitHub repository first to unlock the intelligence workspace.</div></div>',
+            unsafe_allow_html=True,
+        )
+        st.markdown('<div class="sidebar-section">Locked features</div>', unsafe_allow_html=True)
+        for label in ["📊  Dashboard", "👥  Contributors", "🧠  Code Insights", "🚨  Risk Center", "🤖  Assessment", "⚖️  Compare", "🔮  Predictive Risk"]:
+            icon, text = label.split("  ", 1)
+            st.markdown(
+                f'<div class="sidebar-locked-item"><span class="sidebar-locked-icon">{icon}</span><span>{html.escape(text)}</span><span style="margin-left:auto;opacity:.65">⌕</span></div>',
+                unsafe_allow_html=True,
+            )
+        selected_page = "Repository"
+    else:
+        if st.session_state.get("nav_page") not in pages:
+            st.session_state.nav_page = "Dashboard"
+        current_page = st.session_state.nav_page
+        st.markdown('<div class="sidebar-section">Command center</div>', unsafe_allow_html=True)
+        command_index = next((i for i, item in enumerate(command_options) if item.endswith(current_page)), 0)
+        st.radio("Command center", command_options, index=command_index, label_visibility="collapsed", key="command_nav", on_change=_set_nav, args=("command_nav",))
+        current_page = st.session_state.nav_page
+        st.markdown('<div class="sidebar-section">Intelligence</div>', unsafe_allow_html=True)
+        intel_index = next((i for i, item in enumerate(intelligence_options) if item.endswith(current_page)), 0)
+        st.radio("Intelligence", intelligence_options, index=intel_index, label_visibility="collapsed", key="intel_nav", on_change=_set_nav, args=("intel_nav",))
+        selected_page = st.session_state.nav_page
 
     st.markdown('<div class="sidebar-section">Workspace</div>', unsafe_allow_html=True)
-    if st.session_state.current_repo:
+    if workspace_unlocked:
         repo_label = html.escape(st.session_state.current_repo)
         scans = st.session_state.repo_session_count
         last_scan = st.session_state.get("last_refresh")
-        last_scan_html = (
-            f'<div class="sidebar-meta"><span>Last scan</span><span class="sidebar-count">{html.escape(str(last_scan))}</span></div>'
-            if last_scan
-            else ""
+        last_scan_html = f'<div class="sidebar-meta"><span>Last scan</span><span class="sidebar-count">{html.escape(str(last_scan))}</span></div>' if last_scan else ""
+        st.markdown(
+            f'<div class="sidebar-status"><div class="sidebar-status-label">Active repository</div><div class="sidebar-status-name">{repo_label}</div><div class="sidebar-live"><span class="live-dot"></span>Telemetry connected</div><div class="sidebar-meta"><span>Session scans</span><span class="sidebar-count">{scans}/10</span></div>{last_scan_html}</div>',
+            unsafe_allow_html=True,
         )
-        sidebar_html = (
-            f'<div class="sidebar-status">'
-            f'<div class="sidebar-status-label">Active repository</div>'
-            f'<div class="sidebar-status-name">{repo_label}</div>'
-            f'<div class="sidebar-live"><span class="live-dot"></span>Telemetry connected</div>'
-            f'<div class="sidebar-meta"><span>Session scans</span><span class="sidebar-count">{scans}/10</span></div>'
-            f'{last_scan_html}'
-            f'</div>'
-        )
-        st.markdown(sidebar_html, unsafe_allow_html=True)
     else:
         st.markdown(
-            '<div class="sidebar-status">'
-            '<div class="sidebar-status-label">Workspace</div>'
-            '<div class="sidebar-status-name">No repository selected</div>'
-            '<div class="sidebar-meta"><span>Session scans </span><span class="sidebar-count">0/10</span></div>'
-            '</div>',
+            '<div class="sidebar-status"><div class="sidebar-status-label">Setup required</div><div class="sidebar-status-name">No repository connected</div><div class="sidebar-meta"><span>Workspace</span><span class="sidebar-count">LOCKED</span></div></div>',
             unsafe_allow_html=True,
         )
 
 
 current_repo = st.session_state.get("current_repo")
+workspace_unlocked = bool(current_repo and st.session_state.get("repo_analysis"))
 
-hero_title = f"{html.escape(str(current_repo))} intelligence" if current_repo else "Repository Intelligence Dashboard"
-hero_subtitle = (
-    "Live repository telemetry is loaded. Re-scan to update metrics, compare against history, and surface what changed."
-    if current_repo
-    else "Analyze a GitHub repository to unlock live health, contributor, code-quality, trend, and risk intelligence."
-)
-st.markdown(
-    f"""
-    <div class="global-hero">
-        <div class="hero-kicker">RepoPulse workspace</div>
-        <div class="hero-title">{hero_title}</div>
-        <div class="hero-subtitle">{hero_subtitle}</div>
-        <div class="hero-meta">
-            <span class="hero-meta-pill">Live analytics</span>
-            <span class="hero-meta-pill">Historical snapshots</span>
-            <span class="hero-meta-pill">Explainable intelligence</span>
+if not workspace_unlocked:
+    st.markdown(
+        """
+        <div class="onboarding-shell">
+          <div class="onboarding-kicker">RepoPulse workspace</div>
+          <div class="onboarding-title">Connect a repository to unlock RepoPulse.</div>
+          <div class="onboarding-copy">Start by providing a public GitHub repository URL or an <strong>owner/repository</strong> name. Once the repository is successfully analyzed, the dashboard, contributor intelligence, code insights, risk analysis, assessment, comparison and predictive features become available.</div>
+          <div class="onboarding-steps">
+            <div class="onboarding-step"><div class="onboarding-step-num">01</div><div class="onboarding-step-title">Connect</div><div class="onboarding-step-copy">Enter the GitHub repository you want RepoPulse to understand.</div></div>
+            <div class="onboarding-step"><div class="onboarding-step-num">02</div><div class="onboarding-step-title">Analyze</div><div class="onboarding-step-copy">RepoPulse gathers repository, activity and engineering signals.</div></div>
+            <div class="onboarding-step"><div class="onboarding-step-num">03</div><div class="onboarding-step-title">Explore</div><div class="onboarding-step-copy">Your intelligence workspace unlocks after a successful scan.</div></div>
+          </div>
         </div>
-    </div>
-    """,
-    unsafe_allow_html=True,
-)
-render_focus_bar()
+        """,
+        unsafe_allow_html=True,
+    )
+    render_focus_bar()
+    pages["Repository"]()
+else:
+    hero_title = f"{html.escape(str(current_repo))} intelligence"
+    hero_subtitle = "Live repository telemetry is loaded. Re-scan to update metrics, compare against history, and surface what changed."
+    st.markdown(
+        f"""
+        <div class="global-hero"><div class="hero-kicker">RepoPulse workspace</div><div class="hero-title">{hero_title}</div><div class="hero-subtitle">{hero_subtitle}</div><div class="hero-meta"><span class="hero-meta-pill">Live analytics</span><span class="hero-meta-pill">Historical snapshots</span><span class="hero-meta-pill">Explainable intelligence</span></div></div>
+        """,
+        unsafe_allow_html=True,
+    )
+    render_focus_bar()
+    pages[selected_page]()
 
-pages[selected_page]()

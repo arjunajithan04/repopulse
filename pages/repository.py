@@ -152,15 +152,91 @@ def _render_history(repo_name: str):
     st.dataframe(rows, use_container_width=True, hide_index=True)
 
 
+
+
+def run_active_scan():
+    """Run the queued repository analysis on the dedicated scan screen."""
+    pending = st.session_state.get("pending_scan") or {}
+    owner = pending.get("owner")
+    repo_name = pending.get("repo")
+    deep_scan = bool(pending.get("deep_scan"))
+    was_unlocked = bool(pending.get("was_unlocked"))
+    if not owner or not repo_name:
+        st.session_state.scan_active = False
+        st.session_state.scan_error = "No repository scan was queued."
+        return
+
+    try:
+        if pending.get("refresh"):
+            st.session_state.repo_cache_nonce += 1
+        nonce = st.session_state.repo_cache_nonce
+        full_name = f"{owner}/{repo_name}"
+        scan = st.empty()
+
+        render_scan_loader(scan, full_name, 4, "Connecting to GitHub", "Establishing a secure GitHub telemetry channel…")
+        repo_data = _cached_repository(owner, repo_name, nonce)
+        render_scan_loader(scan, full_name, 16, "Loading repository metadata", "Repository identity and baseline metadata received.", {"stars": repo_data.get("stargazers_count", 0), "forks": repo_data.get("forks_count", 0), "branch": repo_data.get("default_branch", "main")})
+
+        contributors_data = _cached_contributors(owner, repo_name, nonce)
+        render_scan_loader(scan, full_name, 29, "Loading contributors", f"Mapped {len(contributors_data or [])} contributor records.", {"contributors": len(contributors_data or [])})
+
+        pull_requests_data = _cached_prs(owner, repo_name, nonce)
+        render_scan_loader(scan, full_name, 42, "Loading pull requests", f"Collected {len(pull_requests_data or [])} pull-request records.", {"pull requests": len(pull_requests_data or [])})
+
+        issues_data = _cached_issues(owner, repo_name, nonce)
+        render_scan_loader(scan, full_name, 55, "Loading issues", f"Collected {len(issues_data or [])} issue records.", {"issues": len(issues_data or [])})
+
+        languages_data = _cached_languages(owner, repo_name, nonce)
+        branch = repo_data.get("default_branch") or "main"
+        commits_data = _cached_commits(owner, repo_name, branch, nonce)
+        render_scan_loader(scan, full_name, 66, "Loading languages and activity", f"Detected {len(languages_data or {})} languages.", {"languages": len(languages_data or {}), "commits": len(commits_data or [])})
+
+        tree_data = _cached_tree(owner, repo_name, branch, nonce)
+        render_scan_loader(scan, full_name, 76, "Building repository inventory", f"Observed {len(commits_data or [])} recent commits.", {"commits": len(commits_data or []), "files": len(tree_data or [])})
+
+        analysis = analyze_repository(repo_data, contributors_data, languages_data, issues_data, pull_requests_data, commits_data, tree_data=tree_data)
+        engineering, code_metrics = _prepare_scan(tree_data, owner, repo_name, analysis.repository.default_branch or branch, nonce, deep_scan)
+        analysis.metrics["engineering_intelligence"] = engineering
+        if deep_scan:
+            analysis.metrics["code_analysis"] = code_metrics
+
+        render_scan_loader(scan, full_name, 94, "Checking API capacity", "Validating GitHub API capacity and scan health…", {"deep scan": "on" if deep_scan else "off"})
+        snapshot = _snapshot(analysis)
+        st.session_state.previous_snapshot = st.session_state.repo_snapshots.get(full_name)
+        save_snapshot(snapshot)
+        st.session_state.last_refresh = datetime.now(timezone.utc).strftime("%d %b %Y, %H:%M UTC")
+        st.session_state.repo_session_count += 1
+        st.session_state.repo_session_history.append(full_name)
+        st.session_state.current_repo = full_name
+        st.session_state.repo_analysis = analysis
+        st.session_state.repo_snapshots[full_name] = snapshot
+        st.session_state.nav_page = "Repository" if was_unlocked else "Dashboard"
+
+        render_scan_loader(scan, full_name, 100, "Finalizing repository intelligence", "Repository intelligence is ready. Unlocking the workspace…", {"health": f"{snapshot.get('health', 0):.1f}/100", "scan": f"{st.session_state.repo_session_count}/{MAX_ANALYSES}"}, completed=True)
+        import time
+        time.sleep(0.65)
+        st.session_state.pending_scan = None
+        st.session_state.scan_active = False
+        st.session_state.scan_error = None
+        st.rerun()
+    except Exception as exc:
+        st.session_state.pending_scan = None
+        st.session_state.scan_active = False
+        st.session_state.scan_error = _friendly_error(exc)
+        st.rerun()
+
 def repository_page():
     init_db()
     st.subheader("Repository overview", divider="blue")
     st.caption("Analyze a GitHub repository and build a cached, evidence-based intelligence profile.")
+    scan_error = st.session_state.pop("scan_error", None)
+    if scan_error:
+        st.error(scan_error)
 
     st.session_state.setdefault("repo_session_count", 0)
     st.session_state.setdefault("repo_session_history", [])
     st.session_state.setdefault("repo_snapshots", {})
-    st.session_state.setdefault("repository_input", "microsoft/vscode")
+    st.session_state.setdefault("repository_input", "")
     st.session_state.setdefault("repo_cache_nonce", 0)
     if st.session_state.pop("repository_focus", None) == "scan":
         st.html('<div class="rp-callout good"><div class="rp-callout-icon">↗</div><div><div class="rp-callout-title">Scan workspace</div><div class="rp-callout-body">Use the repository controls below to run a fresh GitHub analysis. Deep scan can be enabled when code-level intelligence is needed.</div></div></div>')
@@ -181,51 +257,22 @@ def repository_page():
             st.warning(f"This browser session has reached the {MAX_ANALYSES}-repository analysis limit.")
             return
         try:
-            if same_repo:
-                st.session_state.repo_cache_nonce += 1
-            nonce = st.session_state.repo_cache_nonce
-            repo_owner, repo_name = parse_repository_input(_normalize_repository_input(repository))
-            client = GitHubClient()
-            scan = st.empty()
-            render_scan_loader(scan, f"{repo_owner}/{repo_name}", 4, "Connecting to GitHub", "Establishing a secure GitHub telemetry channel…")
-            repo_data = _cached_repository(repo_owner, repo_name, nonce)
-            render_scan_loader(scan, f"{repo_owner}/{repo_name}", 16, "Loading repository metadata", "Repository identity and baseline metadata received.", {"stars": repo_data.get("stargazers_count", 0), "forks": repo_data.get("forks_count", 0), "branch": repo_data.get("default_branch", "main")})
-            contributors_data = _cached_contributors(repo_owner, repo_name, nonce)
-            render_scan_loader(scan, f"{repo_owner}/{repo_name}", 29, "Loading contributors", f"Mapped {len(contributors_data or [])} contributor records.", {"contributors": len(contributors_data or [])})
-            pull_requests_data = _cached_prs(repo_owner, repo_name, nonce)
-            render_scan_loader(scan, f"{repo_owner}/{repo_name}", 42, "Loading pull requests", f"Collected {len(pull_requests_data or [])} pull-request records.", {"pull requests": len(pull_requests_data or [])})
-            issues_data = _cached_issues(repo_owner, repo_name, nonce)
-            render_scan_loader(scan, f"{repo_owner}/{repo_name}", 55, "Loading issues", f"Collected {len(issues_data or [])} issue records.", {"issues": len(issues_data or [])})
-            languages_data = _cached_languages(repo_owner, repo_name, nonce)
-            render_scan_loader(scan, f"{repo_owner}/{repo_name}", 66, "Loading languages and activity", f"Detected {len(languages_data or {})} languages.", {"languages": len(languages_data or {})})
-            commits_data = _cached_commits(repo_owner, repo_name, repo_data.get("default_branch", "main"), nonce)
-            render_scan_loader(scan, f"{repo_owner}/{repo_name}", 76, "Building repository inventory", f"Observed {len(commits_data or [])} recent commits.", {"commits": len(commits_data or [])})
-            tree_data = _cached_tree(repo_owner, repo_name, repo_data.get("default_branch", "main"), nonce)
-            render_scan_loader(scan, f"{repo_owner}/{repo_name}", 84, "Calculating engineering intelligence", f"Indexed {len(tree_data or [])} tree entries.", {"files": len(tree_data or [])})
-            analysis = analyze_repository(repo_data, contributors_data, languages_data, issues_data, pull_requests_data, commits_data, tree_data=tree_data)
-            engineering, code_metrics = _prepare_scan(tree_data, repo_owner, repo_name, analysis.repository.default_branch or "main", nonce, deep_scan)
-            analysis.metrics["engineering_intelligence"] = engineering
-            if deep_scan:
-                analysis.metrics["code_analysis"] = code_metrics
-            render_scan_loader(scan, f"{repo_owner}/{repo_name}", 94, "Checking API capacity", "Validating GitHub API capacity and scan health…", {"deep scan": "on" if deep_scan else "off"})
-            snapshot = _snapshot(analysis)
-            full_name = f"{repo_owner}/{repo_name}"
-            st.session_state.previous_snapshot = st.session_state.repo_snapshots.get(full_name)
-            save_snapshot(snapshot)
-            st.session_state.last_refresh = datetime.now(timezone.utc).strftime("%d %b %Y, %H:%M UTC")
-            st.session_state.repo_session_count += 1
-            st.session_state.repo_session_history.append(full_name)
-            st.session_state.current_repo = full_name
-            st.session_state.repo_analysis = analysis
-            st.session_state.repo_snapshots[full_name] = snapshot
-            render_scan_loader(scan, full_name, 100, "Finalizing repository intelligence", "Repository intelligence is ready. Entering the workspace…", {"health": f"{snapshot.get('health', 0):.1f}/100", "scan": f"{st.session_state.repo_session_count + 1}/{MAX_ANALYSES}"}, completed=True)
-            import time
-            time.sleep(0.45)
-            scan.empty()
-            st.success(f"Analyzed {full_name} · {st.session_state.repo_session_count}/{MAX_ANALYSES} this session")
+            normalized = _normalize_repository_input(repository)
+            repo_owner, repo_name = parse_repository_input(normalized)
+            # Move the scan into a dedicated full-screen application state.
+            # The actual API work happens on the next Streamlit run so the
+            # sidebar and normal workspace are never rendered underneath it.
+            st.session_state.pending_scan = {
+                "owner": repo_owner,
+                "repo": repo_name,
+                "deep_scan": bool(deep_scan),
+                "refresh": bool(same_repo),
+                "was_unlocked": bool(st.session_state.get("current_repo") and st.session_state.get("repo_analysis")),
+            }
+            st.session_state.scan_error = None
+            st.session_state.scan_active = True
+            st.rerun()
         except Exception as exc:
-            if 'scan' in locals():
-                scan.empty()
             st.error(_friendly_error(exc))
             return
 
