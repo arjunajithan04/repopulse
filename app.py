@@ -1562,6 +1562,349 @@ st.markdown(
         opacity: 0.45;
       }
     }
+    
+    /* =======================================================================
+       RepoPulse Glass Surface System
+       UI-only enhancement: preserves the existing repository flow and logic.
+       ======================================================================= */
+
+    :root {
+      --glass-bg: rgba(10, 14, 24, 0.54);
+      --glass-bg-soft: rgba(14, 18, 30, 0.42);
+      --glass-bg-strong: rgba(10, 14, 24, 0.68);
+      --glass-border: rgba(255, 255, 255, 0.105);
+      --glass-border-highlight: rgba(168, 151, 255, 0.20);
+      --glass-shadow: 0 24px 70px rgba(0, 0, 0, 0.24);
+      --glass-blur: 18px;
+      --glass-saturate: 125%;
+    }
+
+    /* Keep the supplied cinematic background visible beneath the UI. */
+    .stApp {
+      background-color: #050814 !important;
+      background-size: cover !important;
+      background-position: center center !important;
+      background-attachment: fixed !important;
+    }
+
+    .stApp::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      background:
+        radial-gradient(circle at 72% 18%, rgba(99, 102, 241, 0.075), transparent 30%),
+        radial-gradient(circle at 25% 78%, rgba(139, 92, 246, 0.055), transparent 34%);
+      mix-blend-mode: screen;
+    }
+
+    /* Main glass surfaces. */
+    .global-hero,
+    .hero-card,
+    .repo-hero,
+    .onboarding-shell,
+    .health-orb-card,
+    .health-panel,
+    .insight-card,
+    .risk-card,
+    .metric-card,
+    .rp-callout,
+    .telemetry-strip,
+    .report-toolbar,
+    .empty-state,
+    .assessment-score,
+    .assessment-status,
+    .cinematic-spotlight,
+    .sidebar-lock-card,
+    .sidebar-status,
+    .onboarding-step {
+      background:
+        linear-gradient(
+          135deg,
+          rgba(255, 255, 255, 0.045),
+          rgba(255, 255, 255, 0.012) 48%,
+          rgba(139, 92, 246, 0.025)
+        ),
+        var(--glass-bg) !important;
+      border-color: var(--glass-border) !important;
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.045),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.18),
+        var(--glass-shadow) !important;
+      backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+      -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+    }
+
+    .global-hero,
+    .hero-card,
+    .repo-hero,
+    .onboarding-shell,
+    .health-orb-card {
+      background-color: rgba(9, 13, 22, 0.50) !important;
+    }
+
+    /* Glass highlight line along the top edge. */
+    .global-hero::before,
+    .hero-card::before,
+    .repo-hero::before,
+    .onboarding-shell::before,
+    .health-orb-card::before,
+    .metric-card::before,
+    .insight-card::before,
+    .risk-card::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 7%;
+      right: 7%;
+      height: 1px;
+      background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255, 255, 255, 0.18),
+        rgba(167, 139, 250, 0.12),
+        transparent
+      );
+      pointer-events: none;
+    }
+
+    /* Cards become slightly more transparent on hover, revealing the artwork. */
+    .metric-card:hover,
+    .insight-card:hover,
+    .risk-card:hover,
+    .onboarding-step:hover {
+      background:
+        linear-gradient(
+          135deg,
+          rgba(255, 255, 255, 0.065),
+          rgba(255, 255, 255, 0.018)
+        ),
+        rgba(12, 16, 27, 0.48) !important;
+      border-color: var(--glass-border-highlight) !important;
+      transform: translateY(-2px);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.065),
+        0 22px 52px rgba(0, 0, 0, 0.26),
+        0 0 34px rgba(99, 102, 241, 0.055) !important;
+    }
+
+    /* Sidebar: glass, but never compete with the content. */
+    [data-testid="stSidebar"] {
+      background:
+        linear-gradient(180deg, rgba(4, 8, 17, 0.76), rgba(4, 7, 14, 0.68)) !important;
+      border-right: 1px solid rgba(255, 255, 255, 0.065);
+      backdrop-filter: blur(20px) saturate(120%);
+      -webkit-backdrop-filter: blur(20px) saturate(120%);
+      box-shadow: 18px 0 55px rgba(0, 0, 0, 0.16);
+    }
+
+    /* Keep the supplied logo compact and visually balanced. */
+    .sidebar-logo {
+      width: 34px !important;
+      height: 34px !important;
+      max-width: 34px !important;
+      max-height: 34px !important;
+      min-width: 34px !important;
+      min-height: 34px !important;
+      object-fit: contain !important;
+      border-radius: 9px !important;
+    }
+
+    /* Sidebar navigation surfaces. */
+    .sidebar-locked-item,
+    [data-testid="stSidebar"] .stRadio label {
+      transition:
+        background 0.2s ease,
+        border-color 0.2s ease,
+        transform 0.2s ease;
+    }
+
+    [data-testid="stSidebar"] .stRadio label:hover {
+      background: rgba(139, 92, 246, 0.075) !important;
+      border-color: rgba(139, 92, 246, 0.12) !important;
+    }
+
+    .sidebar-status,
+    .sidebar-lock-card {
+      background:
+        linear-gradient(135deg, rgba(255,255,255,0.038), rgba(139,92,246,0.028)),
+        rgba(8, 12, 21, 0.46) !important;
+      backdrop-filter: blur(16px) saturate(120%);
+      -webkit-backdrop-filter: blur(16px) saturate(120%);
+    }
+
+    /* Inputs and controls get the same glass language. */
+    .stTextInput > div > div,
+    .stTextArea > div > div,
+    .stSelectbox > div > div,
+    [data-baseweb="select"] > div {
+      background: rgba(7, 11, 19, 0.52) !important;
+      border-color: rgba(255, 255, 255, 0.10) !important;
+      backdrop-filter: blur(12px) saturate(120%);
+      -webkit-backdrop-filter: blur(12px) saturate(120%);
+    }
+
+    .stTextInput input,
+    .stTextArea textarea,
+    [data-baseweb="select"] input {
+      background: transparent !important;
+    }
+
+    /* Buttons: translucent body with a restrained violet edge. */
+    .stButton > button,
+    .stDownloadButton > button {
+      background:
+        linear-gradient(135deg, rgba(139, 92, 246, 0.84), rgba(99, 102, 241, 0.76)) !important;
+      border: 1px solid rgba(196, 181, 253, 0.22) !important;
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.12),
+        0 12px 30px rgba(76, 29, 149, 0.18) !important;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+
+    .stButton > button:hover,
+    .stDownloadButton > button:hover {
+      border-color: rgba(221, 214, 254, 0.38) !important;
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.16),
+        0 16px 38px rgba(76, 29, 149, 0.25) !important;
+    }
+
+    /* Tabs and expanders. */
+    .stTabs [data-baseweb="tab-list"] {
+      background: rgba(7, 11, 19, 0.30) !important;
+      border: 1px solid rgba(255,255,255,0.055);
+      border-radius: 12px;
+      padding: 3px;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+
+    .stTabs [data-baseweb="tab"] {
+      background: transparent !important;
+      border-radius: 9px;
+    }
+
+    details[data-testid="stExpander"] {
+      background: rgba(9, 13, 22, 0.40) !important;
+      border: 1px solid rgba(255,255,255,0.075) !important;
+      border-radius: 14px !important;
+      backdrop-filter: blur(14px) saturate(120%);
+      -webkit-backdrop-filter: blur(14px) saturate(120%);
+      overflow: hidden;
+    }
+
+    /* Data tables stay readable: glass container, opaque-enough cells. */
+    [data-testid="stDataFrame"] {
+      background: rgba(7, 11, 19, 0.36) !important;
+      border: 1px solid rgba(255,255,255,0.065);
+      border-radius: 14px;
+      overflow: hidden;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+
+    /* Focus bar gets a frosted command-strip treatment. */
+    .rp-focus-bar {
+      background:
+        linear-gradient(90deg, rgba(139,92,246,0.11), rgba(99,102,241,0.035)),
+        rgba(8, 12, 21, 0.44) !important;
+      backdrop-filter: blur(15px) saturate(125%);
+      -webkit-backdrop-filter: blur(15px) saturate(125%);
+    }
+
+    /* Keep Streamlit's own top chrome from becoming a solid rectangle. */
+    [data-testid="stHeader"] {
+      background: rgba(3, 7, 16, 0.26) !important;
+      backdrop-filter: blur(12px) saturate(120%);
+      -webkit-backdrop-filter: blur(12px) saturate(120%);
+    }
+
+    /* -----------------------------------------------------------------------
+       Glass surfaces for native Streamlit cards/metrics used by the pages.
+       This complements the custom RepoPulse cards without changing page logic.
+       ----------------------------------------------------------------------- */
+    [data-testid="stMetric"],
+    [data-testid="metric-container"],
+    [data-testid="stVerticalBlockBorderWrapper"],
+    [data-testid="stAlert"],
+    [data-testid="stDataFrame"],
+    details[data-testid="stExpander"] {
+      background:
+        linear-gradient(135deg, rgba(255,255,255,.045), rgba(255,255,255,.012) 52%, rgba(139,92,246,.025)),
+        rgba(10,14,24,.48) !important;
+      border: 1px solid rgba(255,255,255,.09) !important;
+      border-radius: 16px !important;
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.055),
+        inset 0 -1px 0 rgba(0,0,0,.16),
+        0 18px 55px rgba(0,0,0,.18) !important;
+      backdrop-filter: blur(16px) saturate(125%);
+      -webkit-backdrop-filter: blur(16px) saturate(125%);
+    }
+
+    [data-testid="stMetric"] {
+      padding: 1rem 1.05rem !important;
+      min-height: 112px;
+      transition: transform .22s ease, border-color .22s ease, background .22s ease;
+    }
+    [data-testid="stMetric"]:hover {
+      transform: translateY(-2px);
+      border-color: rgba(168,151,255,.24) !important;
+      background:
+        linear-gradient(135deg, rgba(255,255,255,.06), rgba(139,92,246,.035)),
+        rgba(10,14,24,.42) !important;
+    }
+    [data-testid="stMetricLabel"] { color: rgba(194,199,214,.68) !important; }
+    [data-testid="stMetricValue"] { color: #f5f7fb !important; text-shadow: 0 0 24px rgba(139,92,246,.08); }
+    [data-testid="stMetricDelta"] { color: rgba(214,218,232,.72) !important; }
+
+    /* Glass treatment for bordered Streamlit containers while preserving their content. */
+    [data-testid="stVerticalBlockBorderWrapper"] > div {
+      background: transparent !important;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      [data-testid="stMetric"] { transition: none !important; }
+    }
+
+    /* Accessibility / fallback. */
+    @supports not ((backdrop-filter: blur(1px))) {
+      .global-hero,
+      .hero-card,
+      .repo-hero,
+      .onboarding-shell,
+      .health-orb-card,
+      .health-panel,
+      .insight-card,
+      .risk-card,
+      .metric-card,
+      .rp-callout,
+      .telemetry-strip,
+      .report-toolbar,
+      .empty-state,
+      .assessment-score,
+      .assessment-status,
+      .cinematic-spotlight,
+      .sidebar-lock-card,
+      .sidebar-status,
+      .onboarding-step {
+        background: rgba(12, 16, 25, 0.88) !important;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .metric-card,
+      .insight-card,
+      .risk-card,
+      .onboarding-step {
+        transition: none !important;
+        animation: none !important;
+      }
+    }
+
     </style>
     """, unsafe_allow_html=True)
 
