@@ -45,3 +45,30 @@ def test_repository_analysis_includes_phase5_intelligence():
     )
     assert "activity_intelligence" in result.metrics
     assert "engineering_intelligence" in result.metrics
+
+
+def test_timeline_builds_explainable_milestones():
+    from analysis.timeline import build_milestones, timeline_summary
+
+    snapshots = [
+        {"captured_at": "2026-08-01T10:00:00", "health_score": 82, "recent_commits": 10, "contributors": 4, "open_issues": 10, "open_pull_requests": 4},
+        {"captured_at": "2026-09-01T10:00:00", "health_score": 70, "recent_commits": 4, "contributors": 6, "open_issues": 20, "open_pull_requests": 8},
+        {"captured_at": "2026-10-01T10:00:00", "health_score": 86, "recent_commits": 9, "contributors": 8, "open_issues": 9, "open_pull_requests": 3},
+    ]
+    events = build_milestones(snapshots)
+    titles = {event["title"] for event in events}
+    assert "Health decline" in titles
+    assert "Health recovery" in titles
+    assert "Contributor expansion" in titles
+    assert "Issue pressure spike" in titles
+    summary = timeline_summary(snapshots)
+    assert summary["status"] == "ready"
+    assert summary["health_delta"] == 4
+
+
+def test_timeline_requires_comparison_point():
+    from analysis.timeline import timeline_summary
+
+    result = timeline_summary([{"captured_at": "2026-10-01", "health_score": 80}])
+    assert result["status"] == "insufficient"
+    assert result["events"] == []

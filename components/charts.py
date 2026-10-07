@@ -193,6 +193,72 @@ def render_concentration(scores: Iterable[float], height: int = 300):
     _render(fig, height)
 
 
+def render_repository_health_timeline(df: pd.DataFrame, height: int = 430):
+    """Render a multi-signal repository timeline from persisted snapshots."""
+    required = {"captured_at", "health_score"}
+    if df.empty or not required.issubset(df.columns):
+        st.info("Not enough history to render the repository timeline yet.")
+        return
+
+    chart = df.copy()
+    chart["captured_at"] = pd.to_datetime(chart["captured_at"], errors="coerce")
+    for column in ["health_score", "recent_commits", "open_issues", "open_pull_requests", "contributors", "stars", "forks"]:
+        if column in chart.columns:
+            chart[column] = pd.to_numeric(chart[column], errors="coerce")
+    chart = chart.dropna(subset=["captured_at", "health_score"]).sort_values("captured_at")
+    if chart.empty:
+        st.info("Not enough history to render the repository timeline yet.")
+        return
+
+    if not PLOTLY_AVAILABLE:
+        fallback = chart[[c for c in ["captured_at", "health_score"] if c in chart.columns]].copy().set_index("captured_at")
+        st.line_chart(fallback, use_container_width=True)
+        return
+
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(
+        x=chart["captured_at"],
+        y=chart["health_score"],
+        mode="lines+markers",
+        name="Health",
+        line=dict(color=PURPLE, width=4, shape="spline"),
+        marker=dict(size=8, color=INDIGO, line=dict(color="#0d1016", width=2)),
+        fill="tozeroy",
+        fillcolor="rgba(139,92,246,.07)",
+        hovertemplate="%{x|%d %b %Y %H:%M}<br><b>Health</b>: %{y:.1f}/100<extra></extra>",
+    ))
+
+    # Add a light activity trace when available. It is normalized so different
+    # repository scales do not visually overpower the health signal.
+    if "recent_commits" in chart.columns and chart["recent_commits"].notna().any():
+        commits = chart["recent_commits"].fillna(0)
+        max_commits = float(commits.max())
+        if max_commits > 0:
+            normalized = commits / max_commits * 100
+            fig.add_trace(go.Scatter(
+                x=chart["captured_at"], y=normalized,
+                mode="lines", name="Activity momentum",
+                line=dict(color=GREEN, width=2, dash="dot"),
+                opacity=.65,
+                hovertemplate="%{x|%d %b %Y %H:%M}<br><b>Activity</b>: %{customdata}<extra></extra>",
+                customdata=commits.round(0),
+            ))
+
+    fig.add_hline(y=80, line_dash="dot", line_color=GREEN, opacity=.25)
+    fig.add_hline(y=60, line_dash="dot", line_color=AMBER, opacity=.22)
+    fig.add_annotation(xref="paper", x=1, y=80, text="Healthy", showarrow=False, xanchor="right", yshift=8, font=dict(color=MUTED, size=10))
+    fig.add_annotation(xref="paper", x=1, y=60, text="Attention", showarrow=False, xanchor="right", yshift=8, font=dict(color=MUTED, size=10))
+    fig.update_yaxes(range=[0, 100], title=None)
+    fig.update_xaxes(title=None)
+    fig.update_layout(
+        showlegend=True,
+        hovermode="x unified",
+        legend=dict(orientation="h", y=1.08, x=0, font=dict(color=MUTED)),
+        margin=dict(l=8, r=8, t=30, b=8),
+    )
+    _render(fig, height)
+
+
 def render_health_trajectory(df: pd.DataFrame, height: int = 300):
     """Render a cinematic health trajectory from persisted snapshots."""
     required = {"captured_at", "health_score"}

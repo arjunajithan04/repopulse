@@ -1905,7 +1905,44 @@ st.markdown(
       }
     }
 
-    </style>
+
+    .timeline-summary{display:flex;flex-direction:column;gap:5px;margin:4px 0 14px;padding:15px 18px;border:1px solid rgba(255,255,255,.075);border-radius:16px;background:linear-gradient(135deg,rgba(139,92,246,.08),rgba(255,255,255,.025));box-shadow:0 12px 32px rgba(0,0,0,.12)}
+    .timeline-summary-kicker{font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;color:#8b5cf6;font-weight:700}
+    .timeline-summary strong{font-size:.96rem;color:#f5f7fb;font-weight:650}
+    .timeline-summary>span:last-child{font-size:.76rem;color:#7f8a9b}
+    .timeline-moments{position:relative;margin:4px 0 18px;padding-left:18px;border-left:1px solid rgba(139,92,246,.22)}
+    .timeline-moment{position:relative;display:flex;gap:14px;padding:10px 0 12px}
+    .timeline-moment-dot{position:absolute;left:-29px;top:10px;width:20px;height:20px;border-radius:50%;display:grid;place-items:center;background:#121620;border:1px solid rgba(139,92,246,.35);color:#8b5cf6;font-size:.68rem;font-weight:800;box-shadow:0 0 0 4px rgba(139,92,246,.06)}
+    .timeline-moment.positive .timeline-moment-dot{color:#34d399;border-color:rgba(52,211,153,.35)}
+    .timeline-moment.negative .timeline-moment-dot{color:#fb7185;border-color:rgba(251,113,133,.35)}
+    .timeline-moment-body{display:flex;flex-direction:column;gap:3px}
+    .timeline-moment-meta{font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:#7f8a9b}
+    .timeline-moment-body strong{font-size:.92rem;color:#dce3ed}
+    .timeline-moment-body span{font-size:.82rem;color:#9aa5b5}
+    
+    .scorecard-metric { position:relative; overflow:hidden; min-height:112px; padding:1rem 1rem .85rem; border:1px solid var(--line); border-radius:16px; background:linear-gradient(145deg,rgba(18,22,31,.96),rgba(10,13,19,.96)); box-shadow:0 14px 35px rgba(0,0,0,.14); }
+    .scorecard-metric.good { border-color:rgba(52,211,153,.16); }
+    .scorecard-metric.warning { border-color:rgba(251,191,36,.16); }
+    .scorecard-metric.danger { border-color:rgba(251,113,133,.18); }
+    .scorecard-metric-label { color:var(--muted); font-size:.63rem; font-weight:760; text-transform:uppercase; letter-spacing:.11em; }
+    .scorecard-metric-value { margin-top:.32rem; color:var(--text); font-size:1.65rem; line-height:1; font-weight:820; letter-spacing:-.045em; }
+    .scorecard-metric-value span { margin-left:.15rem; color:var(--muted-2); font-size:.58rem; font-weight:650; letter-spacing:0; }
+    .scorecard-track { height:4px; margin-top:.85rem; overflow:hidden; border-radius:999px; background:rgba(255,255,255,.07); }
+    .scorecard-track span { display:block; height:100%; border-radius:inherit; background:linear-gradient(90deg,var(--primary-2),var(--primary)); }
+    .scorecard-metric.good .scorecard-track span { background:linear-gradient(90deg,#10b981,#34d399); }
+    .scorecard-metric.warning .scorecard-track span { background:linear-gradient(90deg,#d97706,#fbbf24); }
+    .scorecard-metric.danger .scorecard-track span { background:linear-gradient(90deg,#e11d48,#fb7185); }
+    .scorecard-status,.scorecard-action { min-height:112px; margin-top:.75rem; padding:1rem 1.1rem; border:1px solid var(--line); border-radius:16px; background:rgba(255,255,255,.018); }
+    .scorecard-status.good { border-color:rgba(52,211,153,.18); background:linear-gradient(145deg,rgba(52,211,153,.055),rgba(255,255,255,.012)); }
+    .scorecard-status.warning { border-color:rgba(251,191,36,.18); background:linear-gradient(145deg,rgba(251,191,36,.055),rgba(255,255,255,.012)); }
+    .scorecard-status.danger { border-color:rgba(251,113,133,.2); background:linear-gradient(145deg,rgba(251,113,133,.055),rgba(255,255,255,.012)); }
+    .scorecard-status-kicker,.scorecard-action-kicker { color:var(--muted-2); font-size:.58rem; font-weight:800; text-transform:uppercase; letter-spacing:.13em; }
+    .scorecard-status-title { margin-top:.3rem; font-size:1.18rem; font-weight:850; letter-spacing:-.035em; }
+    .scorecard-status-copy,.scorecard-action-copy { margin-top:.38rem; color:var(--muted); font-size:.68rem; line-height:1.5; }
+    .scorecard-action { border-color:rgba(139,92,246,.2); background:linear-gradient(145deg,rgba(139,92,246,.075),rgba(255,255,255,.012)); }
+    .scorecard-action-title { margin-top:.3rem; color:#eeeaff; font-size:.86rem; line-height:1.35; font-weight:750; }
+    @media(max-width:900px){ .scorecard-metric { min-height:100px; } }
+</style>
     """, unsafe_allow_html=True)
 
 # -----------------------------------------------------------------------------
