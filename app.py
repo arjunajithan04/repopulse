@@ -12,6 +12,7 @@ from pages.compare import compare_page
 from pages.predictive import predictive_page
 from components.interaction import init_interaction_state, render_focus_bar
 from components.loading import scan_styles
+from components.boot import render_boot_sequence
 
 
 st.set_page_config(
@@ -20,90 +21,6 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded",
 )
-
-# -----------------------------------------------------------------------------
-# RepoPulse boot screen — shown once per browser session
-# -----------------------------------------------------------------------------
-if "repopulse_boot_seen" not in st.session_state:
-    st.session_state.repopulse_boot_seen = True
-    with open("assets/final-logo.png", "rb") as _boot_logo_file:
-        _boot_logo_b64 = base64.b64encode(_boot_logo_file.read()).decode()
-    st.markdown(
-        f"""
-        <div class="repopulse-boot" aria-label="Loading RepoPulse">
-          <div class="repopulse-boot-glow"></div>
-          <div class="repopulse-boot-content">
-            <img src="data:image/png;base64,{_boot_logo_b64}" alt="RepoPulse" class="repopulse-boot-logo">
-            <div class="repopulse-boot-wordmark">RepoPulse</div>
-            <div class="repopulse-boot-subtitle">REPOSITORY INTELLIGENCE</div>
-            <div class="repopulse-boot-loader"><span></span></div>
-            <div class="repopulse-boot-status">INITIALIZING</div>
-          </div>
-        </div>
-        <style>
-          .repopulse-boot {{
-            position: fixed; inset: 0; z-index: 999999;
-            display: flex; align-items: center; justify-content: center;
-            overflow: hidden;
-            background: #080a0f;
-            animation: repopulseBootExit 2.75s cubic-bezier(.7,0,.2,1) forwards;
-            pointer-events: none;
-          }}
-          .repopulse-boot-glow {{
-            position: absolute; width: 420px; height: 420px; border-radius: 50%;
-            background: radial-gradient(circle, rgba(139,92,246,.16) 0%, rgba(99,102,241,.07) 38%, transparent 72%);
-            filter: blur(8px);
-            animation: repopulseBootPulse 2.4s ease-in-out infinite;
-          }}
-          .repopulse-boot-content {{
-            position: relative; z-index: 2; text-align: center;
-            animation: repopulseBootIn .9s cubic-bezier(.16,1,.3,1) both;
-          }}
-          .repopulse-boot-logo {{
-            width: 72px; height: 72px; object-fit: contain; display: block; margin: 0 auto 18px;
-            filter: drop-shadow(0 0 26px rgba(139,92,246,.32));
-          }}
-          .repopulse-boot-wordmark {{
-            color: #f5f7fb; font-size: 31px; font-weight: 700; letter-spacing: -.04em; line-height: 1;
-          }}
-          .repopulse-boot-subtitle {{
-            margin-top: 10px; color: #7f899a; font-size: 10px; font-weight: 700; letter-spacing: .24em;
-          }}
-          .repopulse-boot-loader {{
-            width: 132px; height: 2px; margin: 28px auto 11px; overflow: hidden; border-radius: 99px;
-            background: rgba(255,255,255,.08);
-          }}
-          .repopulse-boot-loader span {{
-            display: block; width: 42%; height: 100%; border-radius: inherit;
-            background: linear-gradient(90deg, #6366f1, #8b5cf6);
-            animation: repopulseBootProgress 2.25s cubic-bezier(.4,0,.2,1) forwards;
-          }}
-          .repopulse-boot-status {{
-            color: #5f6979; font-size: 9px; font-weight: 700; letter-spacing: .2em;
-          }}
-          @keyframes repopulseBootIn {{
-            from {{ opacity: 0; transform: translateY(10px) scale(.97); }}
-            to {{ opacity: 1; transform: translateY(0) scale(1); }}
-          }}
-          @keyframes repopulseBootPulse {{
-            0%,100% {{ transform: scale(.88); opacity: .65; }}
-            50% {{ transform: scale(1.08); opacity: 1; }}
-          }}
-          @keyframes repopulseBootProgress {{
-            from {{ width: 4%; }}
-            to {{ width: 100%; }}
-          }}
-          @keyframes repopulseBootExit {{
-            0%, 82% {{ opacity: 1; visibility: visible; }}
-            100% {{ opacity: 0; visibility: hidden; }}
-          }}
-          @media (prefers-reduced-motion: reduce) {{
-            .repopulse-boot, .repopulse-boot-content, .repopulse-boot-glow, .repopulse-boot-loader span {{ animation-duration: .35s; }}
-          }}
-        </style>
-        """,
-        unsafe_allow_html=True,
-    )
 
 # -----------------------------------------------------------------------------
 # Global design system
@@ -2188,6 +2105,8 @@ def render_repository_scan_loader(repository: str = "", refresh: bool = False):
         """,
         unsafe_allow_html=True,
     )
+
+render_boot_sequence()
 
 def _init_state():
     defaults = {
