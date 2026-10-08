@@ -22,6 +22,90 @@ st.set_page_config(
 )
 
 # -----------------------------------------------------------------------------
+# RepoPulse boot screen — shown once per browser session
+# -----------------------------------------------------------------------------
+if "repopulse_boot_seen" not in st.session_state:
+    st.session_state.repopulse_boot_seen = True
+    with open("assets/final-logo.png", "rb") as _boot_logo_file:
+        _boot_logo_b64 = base64.b64encode(_boot_logo_file.read()).decode()
+    st.markdown(
+        f"""
+        <div class="repopulse-boot" aria-label="Loading RepoPulse">
+          <div class="repopulse-boot-glow"></div>
+          <div class="repopulse-boot-content">
+            <img src="data:image/png;base64,{_boot_logo_b64}" alt="RepoPulse" class="repopulse-boot-logo">
+            <div class="repopulse-boot-wordmark">RepoPulse</div>
+            <div class="repopulse-boot-subtitle">REPOSITORY INTELLIGENCE</div>
+            <div class="repopulse-boot-loader"><span></span></div>
+            <div class="repopulse-boot-status">INITIALIZING</div>
+          </div>
+        </div>
+        <style>
+          .repopulse-boot {{
+            position: fixed; inset: 0; z-index: 999999;
+            display: flex; align-items: center; justify-content: center;
+            overflow: hidden;
+            background: #080a0f;
+            animation: repopulseBootExit 2.75s cubic-bezier(.7,0,.2,1) forwards;
+            pointer-events: none;
+          }}
+          .repopulse-boot-glow {{
+            position: absolute; width: 420px; height: 420px; border-radius: 50%;
+            background: radial-gradient(circle, rgba(139,92,246,.16) 0%, rgba(99,102,241,.07) 38%, transparent 72%);
+            filter: blur(8px);
+            animation: repopulseBootPulse 2.4s ease-in-out infinite;
+          }}
+          .repopulse-boot-content {{
+            position: relative; z-index: 2; text-align: center;
+            animation: repopulseBootIn .9s cubic-bezier(.16,1,.3,1) both;
+          }}
+          .repopulse-boot-logo {{
+            width: 72px; height: 72px; object-fit: contain; display: block; margin: 0 auto 18px;
+            filter: drop-shadow(0 0 26px rgba(139,92,246,.32));
+          }}
+          .repopulse-boot-wordmark {{
+            color: #f5f7fb; font-size: 31px; font-weight: 700; letter-spacing: -.04em; line-height: 1;
+          }}
+          .repopulse-boot-subtitle {{
+            margin-top: 10px; color: #7f899a; font-size: 10px; font-weight: 700; letter-spacing: .24em;
+          }}
+          .repopulse-boot-loader {{
+            width: 132px; height: 2px; margin: 28px auto 11px; overflow: hidden; border-radius: 99px;
+            background: rgba(255,255,255,.08);
+          }}
+          .repopulse-boot-loader span {{
+            display: block; width: 42%; height: 100%; border-radius: inherit;
+            background: linear-gradient(90deg, #6366f1, #8b5cf6);
+            animation: repopulseBootProgress 2.25s cubic-bezier(.4,0,.2,1) forwards;
+          }}
+          .repopulse-boot-status {{
+            color: #5f6979; font-size: 9px; font-weight: 700; letter-spacing: .2em;
+          }}
+          @keyframes repopulseBootIn {{
+            from {{ opacity: 0; transform: translateY(10px) scale(.97); }}
+            to {{ opacity: 1; transform: translateY(0) scale(1); }}
+          }}
+          @keyframes repopulseBootPulse {{
+            0%,100% {{ transform: scale(.88); opacity: .65; }}
+            50% {{ transform: scale(1.08); opacity: 1; }}
+          }}
+          @keyframes repopulseBootProgress {{
+            from {{ width: 4%; }}
+            to {{ width: 100%; }}
+          }}
+          @keyframes repopulseBootExit {{
+            0%, 82% {{ opacity: 1; visibility: visible; }}
+            100% {{ opacity: 0; visibility: hidden; }}
+          }}
+          @media (prefers-reduced-motion: reduce) {{
+            .repopulse-boot, .repopulse-boot-content, .repopulse-boot-glow, .repopulse-boot-loader span {{ animation-duration: .35s; }}
+          }}
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
+# -----------------------------------------------------------------------------
 # Global design system
 # -----------------------------------------------------------------------------
 st.markdown(
@@ -2143,23 +2227,7 @@ if st.session_state.get("scan_active"):
         [data-testid="stToolbar"] { display: none !important; }
         [data-testid="stAppViewContainer"] { margin: 0 !important; }
         [data-testid="stMainBlockContainer"] { max-width: none !important; padding: 0 !important; }
-        
-
-    /* Causal-style intelligence */
-    .causal-hero,.causal-driver,.causal-evidence,.causal-action,.causal-empty{border:1px solid var(--line);background:linear-gradient(135deg,rgba(255,255,255,.045),rgba(255,255,255,.018));box-shadow:0 14px 38px rgba(0,0,0,.16);border-radius:18px}
-    .causal-hero{display:grid;grid-template-columns:auto 1fr auto;gap:16px;align-items:center;padding:20px 22px;margin-bottom:14px}
-    .causal-hero.positive{border-color:rgba(52,211,153,.24)}.causal-hero.negative{border-color:rgba(251,113,133,.24)}
-    .causal-hero-mark{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;font-size:21px;font-weight:800;background:rgba(139,92,246,.13);color:#c4b5fd}
-    .causal-hero.positive .causal-hero-mark{background:rgba(52,211,153,.12);color:#6ee7b7}.causal-hero.negative .causal-hero-mark{background:rgba(251,113,133,.12);color:#fda4af}
-    .causal-kicker,.causal-subhead small{display:block;text-transform:uppercase;letter-spacing:.12em;font-size:10px;font-weight:700;color:var(--muted-2)}
-    .causal-title{font-size:18px;font-weight:750;margin-top:4px}.causal-copy{font-size:13px;color:var(--muted);margin-top:5px;line-height:1.5}
-    .causal-delta{text-align:right}.causal-delta span{display:block;color:var(--muted-2);font-size:10px;text-transform:uppercase;letter-spacing:.1em}.causal-delta strong{display:block;font-size:20px;margin-top:4px}
-    .causal-subhead{display:flex;align-items:baseline;justify-content:space-between;margin:5px 2px 10px}.causal-subhead span{font-weight:750;font-size:13px}.causal-driver{padding:13px 15px;margin-bottom:9px}.causal-driver-main{display:flex;justify-content:space-between;gap:15px}.causal-driver-main strong{display:block;font-size:13px}.causal-driver-main span{display:block;color:var(--muted);font-size:11px;line-height:1.45;margin-top:4px}.causal-driver-main b{font-size:13px;white-space:nowrap}.causal-driver.positive b{color:#6ee7b7}.causal-driver.negative b{color:#fda4af}.causal-bar,.resilience-track{height:4px;border-radius:99px;background:rgba(255,255,255,.06);overflow:hidden;margin-top:10px}.causal-bar span{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#8b5cf6,#6366f1)}.causal-driver.positive .causal-bar span{background:linear-gradient(90deg,#34d399,#22c55e)}.causal-driver.negative .causal-bar span{background:linear-gradient(90deg,#fb7185,#f43f5e)}
-    .causal-evidence{display:flex;align-items:center;gap:10px;padding:11px 13px;margin-bottom:8px}.causal-evidence-icon{width:27px;height:27px;border-radius:9px;display:grid;place-items:center;background:rgba(139,92,246,.1);color:#c4b5fd;font-weight:800}.causal-evidence strong{display:block;font-size:12px}.causal-evidence span:not(.causal-evidence-icon){display:block;color:var(--muted);font-size:11px;margin-top:2px}.causal-evidence.positive .causal-evidence-icon{color:#6ee7b7;background:rgba(52,211,153,.1)}.causal-evidence.negative .causal-evidence-icon{color:#fda4af;background:rgba(251,113,133,.1)}
-    .causal-action{display:flex;justify-content:space-between;gap:22px;align-items:center;padding:16px 18px;margin-top:14px;background:linear-gradient(135deg,rgba(139,92,246,.11),rgba(99,102,241,.045))}.causal-action strong{display:block;font-size:14px;margin-top:4px}.causal-action>span{max-width:55%;color:var(--muted);font-size:11px;line-height:1.5;text-align:right}.causal-muted{border:1px dashed var(--line-strong);border-radius:15px;padding:18px;color:var(--muted);font-size:12px}
-    .causal-empty{display:flex;align-items:center;gap:14px;padding:17px 18px}.causal-empty-icon{width:38px;height:38px;border-radius:12px;background:rgba(139,92,246,.1);color:#c4b5fd;display:grid;place-items:center;font-weight:800}.causal-empty strong{display:block;font-size:13px}.causal-empty span{display:block;color:var(--muted);font-size:11px;margin-top:3px}
-    @media (max-width: 850px){.causal-hero{grid-template-columns:auto 1fr}.causal-delta{text-align:left;grid-column:2}.causal-action{display:block}.causal-action>span{display:block;max-width:none;text-align:left;margin-top:8px}}
-</style>""",
+        </style>""",
         unsafe_allow_html=True,
     )
     run_active_scan()

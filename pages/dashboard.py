@@ -9,7 +9,6 @@ from analysis.intelligence import assessment, detect_risks, trend_summary
 from analysis.timeline import timeline_summary
 from analysis.scorecard import build_scorecard
 from analysis.resilience import build_resilience_intelligence, simulate_scenario
-from analysis.causal import build_change_explanation
 from components.cards import metric_card, status_badge
 from components.cinematic import render_health_orb, render_spotlight, render_telemetry_strip
 from components.charts import render_health_radar, render_history_chart, render_health_trajectory, render_repository_health_timeline
@@ -78,79 +77,6 @@ def _render_what_changed(analysis, previous):
         st.html(
             f'<div class="change-row"><span class="change-symbol {cls}">{symbol}</span><strong>{html.escape(t["label"])}</strong><span>{t["previous"]:,.1f} → {t["current"]:,.1f} · {pct}</span></div>'
         )
-
-
-def _render_causal_explanation(analysis, previous):
-    """Explain score movement as measured attribution, not unsupported causality."""
-    explanation = build_change_explanation(analysis.metrics or {}, previous)
-    section_header(
-        "Why it changed",
-        "Connects the observed movement to the strongest measured components behind the RepoPulse health model.",
-        "Causal-style intelligence",
-    )
-
-    if not explanation["available"]:
-        st.html(
-            '<div class="causal-empty">'
-            '<div class="causal-empty-icon">↗</div>'
-            '<div><strong>Build the comparison first</strong><span>RepoPulse needs at least two stored snapshots before it can explain movement.</span></div>'
-            '</div>'
-        )
-        return
-
-    delta = explanation["health_delta"]
-    tone = "positive" if delta > 0.5 else "negative" if delta < -0.5 else "neutral"
-    arrow = "↑" if delta > 0.5 else "↓" if delta < -0.5 else "→"
-    delta_text = f"{abs(delta):.1f} pts" if abs(delta) > 0.05 else "flat"
-
-    st.html(
-        f'<div class="causal-hero {tone}">'
-        f'<div class="causal-hero-mark">{arrow}</div>'
-        f'<div><div class="causal-kicker">Observed movement</div>'
-        f'<div class="causal-title">{html.escape(explanation["headline"])}</div>'
-        f'<div class="causal-copy">{html.escape(explanation["implication"])}</div></div>'
-        f'<div class="causal-delta"><span>Health movement</span><strong>{delta_text}</strong></div>'
-        f'</div>'
-    )
-
-    left, right = st.columns([1.35, 0.65], vertical_alignment="top")
-    with left:
-        st.html('<div class="causal-subhead"><span>Measured drivers</span><small>Weighted contribution to the health model</small></div>')
-        if explanation["drivers"]:
-            for driver in explanation["drivers"]:
-                impact = driver["weighted_impact"]
-                cls = "positive" if impact > 0 else "negative" if impact < 0 else "neutral"
-                sign = "+" if impact > 0 else ""
-                st.html(
-                    f'<div class="causal-driver {cls}">'
-                    f'<div class="causal-driver-main"><div><strong>{html.escape(driver["name"])}</strong>'
-                    f'<span>{driver["previous"]:.0f} → {driver["current"]:.0f} · {html.escape(driver["detail"])}</span></div>'
-                    f'<b>{sign}{impact:.1f}</b></div>'
-                    f'<div class="causal-bar"><span style="width:{min(100, max(3, abs(impact) * 8)):.1f}%"></span></div>'
-                    f'</div>'
-                )
-        else:
-            st.html('<div class="causal-muted">No health dimension moved enough to identify a strong measured driver.</div>')
-
-    with right:
-        st.html('<div class="causal-subhead"><span>Repository evidence</span><small>Supporting telemetry</small></div>')
-        if explanation["telemetry"]:
-            for item in explanation["telemetry"]:
-                direction = "↑" if item["delta"] > 0 else "↓" if item["delta"] < 0 else "→"
-                cls = "positive" if item.get("improved") else "negative" if item.get("improved") is False else "neutral"
-                pct = f"{item['pct']:+.1f}%" if item["pct"] is not None else "new"
-                st.html(
-                    f'<div class="causal-evidence {cls}"><span class="causal-evidence-icon">{direction}</span>'
-                    f'<div><strong>{html.escape(item["name"])}</strong><span>{item["previous"]:.0f} → {item["current"]:.0f} · {pct}</span></div></div>'
-                )
-        else:
-            st.html('<div class="causal-muted">No supporting telemetry changed materially.</div>')
-
-    st.html(
-        f'<div class="causal-action"><div><span class="causal-kicker">So what?</span>'
-        f'<strong>{html.escape(explanation["action"])}</strong></div>'
-        f'<span>{html.escape(explanation["basis"])}</span></div>'
-    )
 
 
 def _render_history(repo_name: str):
@@ -464,7 +390,6 @@ def dashboard_page():
             st.success("No major risk signals detected from the current metrics.")
 
     _render_what_changed(analysis, previous)
-    _render_causal_explanation(analysis, previous)
 
     activity = metrics.get("activity_intelligence", {}) or {}
     engineering = metrics.get("engineering_intelligence", {}) or {}
