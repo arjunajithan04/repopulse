@@ -5,15 +5,27 @@ import streamlit as st
 
 
 def page_header(eyebrow: str, title: str, description: str = "", action=None):
+    """Render a consistent, compact page heading across RepoPulse screens.
+
+    Keep the eyebrow, title, and description in one HTML block so Streamlit's
+    block spacing cannot introduce different gaps between pages. The optional
+    action remains a native Streamlit element in its own column.
+    """
     c1, c2 = st.columns([5.5, 1], vertical_alignment="bottom")
+    description_html = (
+        f'<div class="page-description rp-page-description">{html.escape(description)}</div>'
+        if description
+        else ""
+    )
     with c1:
         st.html(
-            f'<div class="rp-page-heading"><div class="eyebrow">{html.escape(eyebrow)}</div><h1 class="page-title">{html.escape(title)}</h1></div>'
+            '<div class="rp-page-header">'
+            f'<div class="rp-page-heading">'
+            f'<div class="eyebrow">{html.escape(eyebrow)}</div>'
+            f'<h1 class="page-title">{html.escape(title)}</h1>'
+            f'</div>{description_html}'
+            '</div>'
         )
-        if description:
-            st.html(
-                f'<div class="page-description">{html.escape(description)}</div>'
-            )
     if action:
         with c2:
             action()

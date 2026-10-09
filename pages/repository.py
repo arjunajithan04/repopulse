@@ -222,25 +222,29 @@ def run_active_scan():
 
         render_scan_loader(scan, repository, 4, "Connecting to GitHub", "Establishing a secure GitHub telemetry channel…")
         repo_data = _cached_repository(owner, repo_name, nonce)
-        render_scan_loader(scan, repository, 16, "Loading repository metadata", "Repository identity and baseline metadata received.", {"stars": repo_data.get("stargazers_count", 0), "forks": repo_data.get("forks_count", 0), "branch": repo_data.get("default_branch", "main")})
+        owner_data = repo_data.get("owner") or {}
+        owner_login = owner_data.get("login") or owner
+        owner_avatar = owner_data.get("avatar_url")
+        identity = {"avatar_url": owner_avatar, "owner_login": owner_login}
+        render_scan_loader(scan, repository, 16, "Loading repository metadata", "Repository validated. Revealing repository owner…", {"stars": repo_data.get("stargazers_count", 0), "forks": repo_data.get("forks_count", 0), "branch": repo_data.get("default_branch", "main")}, **identity)
         contributors_data = _cached_contributors(owner, repo_name, nonce)
-        render_scan_loader(scan, repository, 29, "Loading contributors", f"Mapped {len(contributors_data or [])} contributor records.", {"contributors": len(contributors_data or [])})
+        render_scan_loader(scan, repository, 29, "Loading contributors", f"Mapped {len(contributors_data or [])} contributor records.", {"contributors": len(contributors_data or [])}, **identity)
         pull_requests_data = _cached_prs(owner, repo_name, nonce)
-        render_scan_loader(scan, repository, 42, "Loading pull requests", f"Collected {len(pull_requests_data or [])} pull-request records.", {"pull requests": len(pull_requests_data or [])})
+        render_scan_loader(scan, repository, 42, "Loading pull requests", f"Collected {len(pull_requests_data or [])} pull-request records.", {"pull requests": len(pull_requests_data or [])}, **identity)
         issues_data = _cached_issues(owner, repo_name, nonce)
-        render_scan_loader(scan, repository, 55, "Loading issues", f"Collected {len(issues_data or [])} issue records.", {"issues": len(issues_data or [])})
+        render_scan_loader(scan, repository, 55, "Loading issues", f"Collected {len(issues_data or [])} issue records.", {"issues": len(issues_data or [])}, **identity)
         languages_data = _cached_languages(owner, repo_name, nonce)
-        render_scan_loader(scan, repository, 66, "Loading languages and activity", f"Detected {len(languages_data or {})} languages.", {"languages": len(languages_data or {})})
+        render_scan_loader(scan, repository, 66, "Loading languages and activity", f"Detected {len(languages_data or {})} languages.", {"languages": len(languages_data or {})}, **identity)
         commits_data = _cached_commits(owner, repo_name, repo_data.get("default_branch", "main"), nonce)
-        render_scan_loader(scan, repository, 76, "Building repository inventory", f"Observed {len(commits_data or [])} recent commits.", {"commits": len(commits_data or [])})
+        render_scan_loader(scan, repository, 76, "Building repository inventory", f"Observed {len(commits_data or [])} recent commits.", {"commits": len(commits_data or [])}, **identity)
         tree_data = _cached_tree(owner, repo_name, repo_data.get("default_branch", "main"), nonce)
-        render_scan_loader(scan, repository, 84, "Calculating engineering intelligence", f"Indexed {len(tree_data or [])} tree entries.", {"files": len(tree_data or [])})
+        render_scan_loader(scan, repository, 84, "Calculating engineering intelligence", f"Indexed {len(tree_data or [])} tree entries.", {"files": len(tree_data or [])}, **identity)
         analysis = analyze_repository(repo_data, contributors_data, languages_data, issues_data, pull_requests_data, commits_data, tree_data=tree_data)
         engineering, code_metrics = _prepare_scan(tree_data, owner, repo_name, analysis.repository.default_branch or "main", nonce, deep_scan)
         analysis.metrics["engineering_intelligence"] = engineering
         if deep_scan:
             analysis.metrics["code_analysis"] = code_metrics
-        render_scan_loader(scan, repository, 94, "Checking API capacity", "Validating GitHub API capacity and scan health…", {"deep scan": "on" if deep_scan else "off"})
+        render_scan_loader(scan, repository, 94, "Checking API capacity", "Validating GitHub API capacity and scan health…", {"deep scan": "on" if deep_scan else "off"}, **identity)
         snapshot = _snapshot(analysis)
         full_name = repository
         st.session_state.previous_snapshot = st.session_state.repo_snapshots.get(full_name)
@@ -251,7 +255,7 @@ def run_active_scan():
         st.session_state.current_repo = full_name
         st.session_state.repo_analysis = analysis
         st.session_state.repo_snapshots[full_name] = snapshot
-        render_scan_loader(scan, full_name, 100, "Finalizing repository intelligence", "Repository intelligence is ready. Unlocking your workspace…", {"health": f"{snapshot.get('health', 0):.1f}/100", "scan": f"{st.session_state.repo_session_count}/{MAX_ANALYSES}"}, completed=True)
+        render_scan_loader(scan, full_name, 100, "Finalizing repository intelligence", "Repository intelligence is ready. Unlocking your workspace…", {"health": f"{snapshot.get('health', 0):.1f}/100", "scan": f"{st.session_state.repo_session_count}/{MAX_ANALYSES}"}, completed=True, **identity)
         time.sleep(0.65)
         st.session_state.pending_scan = None
         st.session_state.scan_active = False
