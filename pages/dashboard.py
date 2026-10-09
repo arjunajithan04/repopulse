@@ -412,9 +412,11 @@ def dashboard_page():
     with c1:
         section_header("Assessment", "A plain-language interpretation of the latest scan.")
         st.write(result["intro"])
-        insight_card("Primary improvement area", f"{result['weakest_dimension']}. {result['priorities'][0]}", "warning", "Priority", "↳")
+        priorities = result.get("priorities") or []
+        primary_priority = priorities[0] if priorities else "Run another scan to refine the next recommended action."
+        insight_card("Primary improvement area", f"{result['weakest_dimension']}. {primary_priority}", "warning", "Priority", "↳")
     with c2:
-        section_header("Repository pulse", "The core numbers behind this scan.")
+        section_header("Ownership & activity", "The people and development signals behind this scan.")
         r1, r2, r3 = st.columns(3)
         with r1:
             metric_card("Contributors", _fmt(metrics.get("total_contributors", 0)), help_text="Visible contributor volume", icon="◎")
