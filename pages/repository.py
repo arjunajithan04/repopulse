@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+import logging
+import traceback
 
 import streamlit as st
 
@@ -157,6 +159,15 @@ def repository_page():
     st.subheader("Repository overview", divider="blue")
     st.caption("Analyze a GitHub repository and build a cached, evidence-based intelligence profile.")
 
+    # Scan failures are captured on the scan screen, then surfaced here after rerun.
+    scan_error = st.session_state.pop("scan_error", None)
+    scan_traceback = st.session_state.pop("scan_traceback", None)
+    if scan_error:
+        st.error(f"Repository scan failed: {scan_error}")
+        if scan_traceback:
+            with st.expander("Technical details (for debugging)"):
+                st.code(scan_traceback, language="text")
+
     st.session_state.setdefault("repo_session_count", 0)
     st.session_state.setdefault("repo_session_history", [])
     st.session_state.setdefault("repo_snapshots", {})
@@ -262,10 +273,15 @@ def run_active_scan():
         st.session_state.nav_page = "Dashboard"
         st.rerun()
     except Exception as exc:
+        # Keep the friendly message for users, but preserve the full traceback
+        # in Cloud logs and session state so failures cannot disappear silently.
+        trace = traceback.format_exc()
+        logging.exception("RepoPulse repository scan failed for %s", repository)
         scan.empty()
         st.session_state.pending_scan = None
         st.session_state.scan_active = False
         st.session_state.scan_error = _friendly_error(exc)
+        st.session_state.scan_traceback = trace
         st.rerun()
 
     analysis = st.session_state.get("repo_analysis")
