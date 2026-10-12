@@ -2123,6 +2123,7 @@ def _init_state():
         "pending_scan": None,
         "scan_active": False,
         "scan_error": None,
+        "scan_just_completed": False,
     }
     for key, value in defaults.items():
         if key not in st.session_state:
@@ -2151,6 +2152,25 @@ if st.session_state.get("scan_active"):
     )
     run_active_scan()
     st.stop()
+
+# A one-shot entrance animation makes the dashboard feel like the scan has
+# handed control over, rather than abruptly replacing the full-screen loader.
+if st.session_state.pop("scan_just_completed", False):
+    st.markdown(
+        """<style>
+        @keyframes rp-dashboard-enter {
+          from { opacity: 0; transform: translateY(10px); filter: blur(2px); }
+          to   { opacity: 1; transform: translateY(0); filter: blur(0); }
+        }
+        [data-testid="stMainBlockContainer"] {
+          animation: rp-dashboard-enter .62s cubic-bezier(.2,.75,.25,1) both;
+        }
+        @media (prefers-reduced-motion: reduce) {
+          [data-testid="stMainBlockContainer"] { animation: none !important; }
+        }
+        </style>""",
+        unsafe_allow_html=True,
+    )
 
 pages = {
     "Dashboard": dashboard_page,
