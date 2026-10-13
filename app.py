@@ -633,6 +633,15 @@ st.markdown(
       align-items: center;
       gap: 0.55rem;
     }
+    .risk-field-label {
+      display: block;
+      margin-bottom: 0.22rem;
+      color: var(--text);
+      font-size: 0.61rem;
+      font-weight: 800;
+      letter-spacing: 0.075em;
+      text-transform: uppercase;
+    }
     .risk-detail {
       color: var(--muted);
       font-size: 0.79rem;

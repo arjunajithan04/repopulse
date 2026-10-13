@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import html
+
 import pandas as pd
 import streamlit as st
 
@@ -11,6 +13,38 @@ from components.charts import render_health_trajectory, render_history_chart
 
 def _tone(label: str) -> str:
     return {"High": "danger", "Moderate": "warning", "Low": "good"}.get(label, "neutral")
+
+
+def _render_forecast_card(label: str, value: str, detail: str, tone: str = "neutral"):
+    palette = {
+        "danger": ("#fb7185", "rgba(244, 63, 94, .10)", "rgba(251, 113, 133, .30)"),
+        "warning": ("#fbbf24", "rgba(245, 158, 11, .10)", "rgba(251, 191, 36, .28)"),
+        "good": ("#a78bfa", "rgba(139, 92, 246, .12)", "rgba(167, 139, 250, .30)"),
+        "neutral": ("#c4b5fd", "rgba(124, 58, 237, .08)", "rgba(167, 139, 250, .20)"),
+    }
+    accent, background, border = palette.get(tone, palette["neutral"])
+    st.html(
+        f"""
+        <div style="height:100%;min-height:116px;padding:16px 17px;border-radius:16px;
+                    background:{background};border:1px solid {border};">
+          <div style="font-size:.72rem;letter-spacing:.09em;text-transform:uppercase;
+                      color:#a9a4bc;font-weight:700;margin-bottom:10px;">{html.escape(str(label))}</div>
+          <div style="font-size:1.45rem;line-height:1.2;font-weight:750;color:{accent};
+                      overflow-wrap:anywhere;margin-bottom:8px;">{html.escape(str(value))}</div>
+          <div style="font-size:.82rem;line-height:1.45;color:#c7c2d6;">{html.escape(str(detail))}</div>
+        </div>
+        """
+    )
+
+
+def _confidence_detail(confidence: str) -> str:
+    return {
+        "High": "More snapshots and multiple signals support this estimate.",
+        "Medium": "Several observations support the direction; keep monitoring for confirmation.",
+        "Low": "Early signal only. Treat this as provisional and collect more scans.",
+        "Very low": "Very limited history. Avoid making major decisions from this estimate alone.",
+        "None": "No historical evidence is available yet.",
+    }.get(confidence, "Confidence depends on the available historical evidence.")
 
 
 def predictive_page():
@@ -38,7 +72,9 @@ def predictive_page():
 
     if pred.label == "Insufficient data":
         callout("Build the signal first", "RepoPulse needs multiple historical scans before predictive intelligence can establish a meaningful trajectory.", "warning", "◌")
-        st.metric("Historical snapshots", result["snapshots"])
+        _render_forecast_card("Historical snapshots", str(result["snapshots"]), "Persisted scans available to the model", "warning")
+        _render_forecast_card("Confidence", pred.confidence, _confidence_detail(pred.confidence), "neutral")
+        st.caption("Collect multiple scans over time to establish a useful trend. A single scan is a baseline, not a forecast.")
         return
 
     left, right = st.columns([0.85, 1.65])
@@ -53,23 +89,35 @@ def predictive_page():
             "Predictive outlook",
         )
 
-    render_telemetry_strip([
-        ("Risk probability", f"{pred.probability:.0f}%", tone),
-        ("Confidence", pred.confidence, "good" if pred.confidence == "High" else "warning"),
-        ("Health trend", f"{result['health_trend']:+.1f}/scan", "good" if result["health_trend"] >= 0 else "danger"),
-        ("Activity trend", f"{result['activity_trend']:+.1f}/scan", "good" if result["activity_trend"] >= 0 else "danger"),
-    ])
+    metric_cols = st.columns(4)
+    with metric_cols[0]:
+        _render_forecast_card("Risk signal", f"{pred.probability:.0f}%", "Directional model estimate, not a guarantee", tone)
+    with metric_cols[1]:
+        _render_forecast_card("Confidence", pred.confidence, _confidence_detail(pred.confidence),
+                              "good" if pred.confidence == "High" else "warning" if pred.confidence in {"Medium", "Low", "Very low"} else "neutral")
+    with metric_cols[2]:
+        health_tone = "good" if result["health_trend"] > 0.2 else "danger" if result["health_trend"] < -0.2 else "neutral"
+        _render_forecast_card("Health momentum", f"{result['health_trend']:+.1f}/scan",
+                              "Improving" if health_tone == "good" else "Declining" if health_tone == "danger" else "Relatively stable",
+                              health_tone)
+    with metric_cols[3]:
+        activity_tone = "good" if result["activity_trend"] > 0.2 else "danger" if result["activity_trend"] < -0.2 else "neutral"
+        _render_forecast_card("Commit momentum", f"{result['activity_trend']:+.1f}/scan",
+                              "Increasing" if activity_tone == "good" else "Decreasing" if activity_tone == "danger" else "Relatively stable",
+                              activity_tone)
 
     section_header("What is driving the forecast", "The model separates observed risk factors from the final directional estimate.", "Evidence")
     if pred.factors:
         for idx, factor in enumerate(pred.factors):
             factor_tone = _tone("High" if factor.severity in {"Critical", "High"} else "Moderate" if factor.severity == "Moderate" else "Low")
+            severity_color = {"danger": "#fb7185", "warning": "#fbbf24", "good": "#a78bfa", "neutral": "#c4b5fd"}.get(factor_tone, "#c4b5fd")
             with st.expander(f"{factor.severity} · {factor.name} · {factor.score:.0f}/100", expanded=idx == 0):
                 st.markdown(f"**Trend:** {factor.trend}")
                 st.markdown(f"**Evidence:** {factor.evidence}")
                 st.markdown(f"**Recommended action:** {factor.recommendation}")
+                st.progress(max(0.0, min(1.0, float(factor.score) / 100.0)), text=f"Relative factor score · {factor.score:.0f}/100")
     else:
-        st.info("No dominant predictive risk factor has emerged yet.")
+        st.info("No dominant predictive risk factor has emerged yet. Continue collecting snapshots so the forecast can detect meaningful changes.")
 
     if pred.recommendation:
         callout("Priority action", pred.recommendation, tone, "→")
@@ -91,9 +139,18 @@ def predictive_page():
         render_health_trajectory(pd.DataFrame(rows), height=300)
 
     section_header("Dimension momentum", "Positive values indicate improvement per snapshot; negative values indicate deterioration.", "Trend intelligence")
-    cols = st.columns(len(result.get("dimension_trends", {})) or 1)
-    for col, (name, slope) in zip(cols, result.get("dimension_trends", {}).items()):
-        col.metric(name, f"{slope:+.1f}", delta="improving" if slope > 0.2 else "declining" if slope < -0.2 else "stable")
+    dimension_trends = result.get("dimension_trends", {})
+    if dimension_trends:
+        cols = st.columns(min(3, len(dimension_trends)))
+        for idx, (name, slope) in enumerate(dimension_trends.items()):
+            col = cols[idx % len(cols)]
+            with col:
+                trend_tone = "good" if slope > 0.2 else "danger" if slope < -0.2 else "neutral"
+                _render_forecast_card(name, f"{slope:+.2f}/scan",
+                                      "Improving" if trend_tone == "good" else "Declining" if trend_tone == "danger" else "Stable",
+                                      trend_tone)
+    else:
+        st.info("Dimension momentum needs at least two valid historical snapshots.")
 
     section_header("Model transparency", "Why RepoPulse is not presenting the forecast as certainty.", "Method")
     st.caption(f"Primary method: {pred.method}. Confidence: {pred.confidence}. Forecast horizon: {pred.horizon}.")
