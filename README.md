@@ -1,329 +1,324 @@
-# 🚀 RepoPulse
-### _GitHub Repository Intelligence Dashboard_
+<div align="center">
 
-[![Python](https://img.shields.io/badge/Python-3.12-blue?style=for-the-badge&logo=python)](https://python.org)
-[![Streamlit](https://img.shields.io/badge/Streamlit-1.28-red?style=for-the-badge&logo=streamlit)](https://streamlit.io)
-[![GitHub API](https://img.shields.io/badge/GitHub_API-REST-black?style=for-the-badge&logo=github)](https://docs.github.com/en/rest)
+<img src="assets/readme-hero.svg" alt="RepoPulse — GitHub Repository Intelligence" width="100%">
 
----
+<br>
 
-## ✨ What is RepoPulse?
+[![Python](https://img.shields.io/badge/Python-3.12-9B8CFF?style=for-the-badge&logo=python&logoColor=white)](https://python.org)
+[![Streamlit](https://img.shields.io/badge/Streamlit-1.45%2B-7C83FD?style=for-the-badge&logo=streamlit&logoColor=white)](https://streamlit.io)
+[![GitHub REST API](https://img.shields.io/badge/GitHub-REST_API-9CA3FF?style=for-the-badge&logo=github&logoColor=white)](https://docs.github.com/en/rest)
+[![Tests](https://img.shields.io/badge/Tests-pytest-A78BFA?style=for-the-badge&logo=pytest&logoColor=white)](https://docs.pytest.org/)
 
-**RepoPulse** is an intelligent GitHub repository analysis dashboard that transforms raw repository data into actionable insights. Powered by the GitHub REST API and built with Streamlit, it provides a comprehensive view of repository health, contributor dynamics, and code quality metrics in real-time.
+**Turn repository activity into engineering clarity.**
 
-Whether you're evaluating repositories, tracking team velocity, or monitoring project health, RepoPulse delivers **dynamic, data-driven intelligence** at your fingertips.
+RepoPulse transforms GitHub repository data into explainable signals about project health, contributor activity, engineering maturity, and risk.
 
----
+[Explore features](#-repository-intelligence) · [Quick start](#-quick-start) · [Configuration](#-configuration) · [Report an issue](https://github.com/arjunajithan04/repopulse/issues)
 
-## 🎯 Core Features
-
-### 📊 **Executive Dashboard**
-- **Real-time metrics** at a glance: Stars, Forks, Open Issues, Health Score
-- **Adaptive highlights** that respond to repository characteristics
-- **Trend analysis** with intelligent insights based on repository metrics
-- **Visual summary charts** displaying repository activity
-
-### 📁 **Repository Analysis**
-- Analyze **any public GitHub repository** by URL or owner/repo format
-- Support for **batch analysis** (up to 10 repositories per session)
-- Automatic repository normalization and validation
-- Session history tracking with analysis persistence
-
-### 👥 **Contributor Intelligence**
-- Deep dive into **contributor activity and contributions**
-- Identify key team members and collaborators
-- Analyze **contributor momentum** and participation trends
-- Visual contributor cards with contribution metrics
-
-### 🧠 **Code Insights**
-- **Language breakdown** analysis
-- Repository **health scoring** system
-- **Code quality metrics** and signals
-- Issue and pull request tracking
-- Recent commit activity monitoring
-
-### 🎨 **Modern Dark Theme**
-- Sleek, minimalist dark interface
-- Smooth gradient backgrounds and animations
-- Purple and blue accent colors for visual hierarchy
-- Fully responsive design with adaptive layouts
+</div>
 
 ---
 
-## 🛠️ Tech Stack
+## ◈ What is RepoPulse?
 
-| Component | Technology |
-|-----------|------------|
-| **Frontend** | Streamlit 1.28+ |
-| **Backend** | Python 3.12 |
-| **API** | GitHub REST API v3 |
-| **Data Processing** | Pandas |
-| **HTTP Client** | Python requests |
-| **Testing** | pytest |
+RepoPulse is a Streamlit-based GitHub repository intelligence dashboard. It brings repository telemetry and engineering signals into one workspace, helping you understand not just *what is happening* in a repository, but *why it matters* and *what to do next*.
+
+<div align="center">
+
+| <sub>01 / OBSERVE</sub><br>**Repository pulse** | <sub>02 / UNDERSTAND</sub><br>**Explainable signals** | <sub>03 / ACT</sub><br>**Prioritized next steps** |
+|:---:|:---:|:---:|
+| Health, activity, and community metrics | Risk factors and engineering context | Assessments, comparisons, and recommendations |
+
+</div>
+
+## ◈ Repository intelligence
+
+The workspace follows a simple narrative: **WHAT → WHY → SO WHAT → NOW WHAT**.
+
+<table>
+<tr>
+<td width="50%" valign="top">
+
+### ◉ Executive Dashboard
+- Key repository metrics at a glance
+- Adaptive highlights and activity trends
+- Engineering pulse and health signals
+
+</td>
+<td width="50%" valign="top">
+
+### ⌘ Repository Analysis
+- Analyze public repositories by URL or `owner/repo`
+- Repository metadata, activity, issues, and pull requests
+- Deep code scan and historical snapshots
+
+</td>
+</tr>
+<tr>
+<td width="50%" valign="top">
+
+### ◎ Contributor Intelligence
+- Contributor activity and contribution patterns
+- Team participation and momentum
+- Leaderboards and concentration signals
+
+</td>
+<td width="50%" valign="top">
+
+### ⌁ Code Insights
+- Language composition
+- File inventory and complexity signals
+- Code-quality indicators and recommendations
+
+</td>
+</tr>
+<tr>
+<td width="50%" valign="top">
+
+### ◈ Risk Center & Assessment
+- Critical, high, and medium risk signals
+- Executive assessment, strengths, and priorities
+- Explainable evidence tied to repository metrics
+
+</td>
+<td width="50%" valign="top">
+
+### ⇄ Compare & Predictive Risk
+- Compare repository profiles and health dimensions
+- Inspect trends and activity momentum
+- Review predictive signals when sufficient history exists
+
+</td>
+</tr>
+</table>
+
+### More intelligence, not just more charts
+
+- **What Changed** — compares the latest scan with a previous session snapshot.
+- **Trend Intelligence** — retains historical health, development, and community signals.
+- **Engineering intelligence** — checks documentation, testing structure, and common dependency manifests.
+- **Live API telemetry** — surfaces GitHub API rate-limit information.
+- **Refresh-aware caching** — repository data is cached briefly, with a live-refresh path to invalidate cached inputs.
+
+> **Interpretation note:** Risk and assessment insights are rule-based and explainable, not generated by an external LLM. Code-quality indicators are bounded and may use heuristics when language-specific AST analysis is unavailable. Dependency-manifest inspection does **not** claim to detect vulnerabilities.
 
 ---
 
-## 📦 Project Architecture
+## ◈ Interface language
 
-```
-repopulse/
-├── app.py                    # Main entry point with theme & navigation
-├── config/
-│   └── settings.py           # Configuration & environment variables
-├── core/
-│   ├── github_client.py      # GitHub API wrapper
-│   ├── models.py             # Data models (RepositoryStats, etc.)
-│   └── repository.py         # Repository domain logic
-├── analysis/
-│   ├── repository_analysis.py # Analysis orchestration & batch logic
-│   ├── metrics.py            # Metrics computation
-│   └── code_analysis.py      # Code-level analysis
-├── pages/
-│   ├── dashboard.py          # Executive Overview
-│   ├── repository.py         # Repository Analyzer
-│   ├── contributors.py       # Contributor Intelligence
-│   └── code_insights.py      # Code Quality Metrics
-├── components/
-│   ├── cards.py              # Metric card components
-│   ├── charts.py             # Visualization components
-│   └── tables.py             # Data table components
-├── utils/
-│   ├── helpers.py            # Utility functions
-│   └── validators.py         # Input validation
-├── tests/
-│   └── test_analysis.py      # Unit tests
-└── assets/
-    └── repo-icon.png         # Application favicon
-```
+RepoPulse uses a dark, purple-and-indigo visual system with glass-inspired panels, restrained glow, clear metric hierarchy, and responsive layouts.
+
+- **Glass-inspired surfaces** — translucent-looking cards and layered gradients.
+- **Focused metrics** — visual emphasis on the numbers that matter.
+- **Consistent navigation** — dedicated pages for each stage of repository analysis.
+- **Context before conclusions** — raw operational counts are distinguished from normalized health dimensions.
+
+<sub>GitHub renders README content in a restricted Markdown/HTML environment. The hero below is a static SVG; interactive application effects are experienced inside RepoPulse itself.</sub>
 
 ---
 
-## 🚀 Quick Start
+## ◈ Tech stack
 
-### Prerequisites
-- Python 3.12 or higher
-- GitHub personal access token (for increased API rate limits)
-- Git
+| Layer | Technology |
+|---|---|
+| Application UI | Streamlit |
+| Language | Python 3.12+ |
+| Repository data | GitHub REST API v3 |
+| Data processing | Pandas |
+| HTTP requests | Requests |
+| Visualizations | Plotly, with Streamlit chart fallbacks |
+| Testing | pytest |
+| Configuration | Environment variables / `.env` |
 
-### Installation
+---
+
+## ◈ Quick start
+
+### 1. Clone the repository
 
 ```bash
-# Clone the repository
 git clone https://github.com/arjunajithan04/repopulse.git
 cd repopulse
-
-# Create a virtual environment (optional but recommended)
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Set up environment variables
-# Create a .env file in the config/ directory with:
-# GITHUB_TOKEN=your_github_token
-# GITHUB_API_BASE=https://api.github.com
 ```
 
-### Run the Application
+### 2. Create and activate a virtual environment
+
+**Windows (PowerShell)**
+
+```powershell
+python -m venv .venv
+.venv\Scripts\Activate.ps1
+```
+
+**macOS / Linux**
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
+```
+
+### 3. Install dependencies
+
+```bash
+python -m pip install --upgrade pip
+pip install -r requirements.txt
+```
+
+### 4. Configure GitHub access
+
+Create a `.env` file in the project root using `.env.example` as a reference:
+
+```env
+GITHUB_TOKEN=your_github_token_here
+GITHUB_API_BASE_URL=https://api.github.com
+APP_TITLE=RepoPulse
+```
+
+A token is recommended for higher GitHub API rate limits. Keep it private: **never commit `.env` or paste your token into source code**.
+
+### 5. Launch RepoPulse
 
 ```bash
 streamlit run app.py
 ```
 
-The application will start at `http://localhost:8501` 🎉
+Open the local URL printed by Streamlit, typically `http://localhost:8501`.
 
 ---
 
-## 📖 How to Use
+## ◈ How to use it
 
-### 1️⃣ **Analyze a Repository**
-- Navigate to the **Repository** page via the sidebar
-- Enter a GitHub repository URL or owner/repo format
-  - Examples: `https://github.com/torvalds/linux` or `torvalds/linux`
-- View real-time analysis with repository metrics
+1. **Analyze a repository** — provide a public GitHub URL or `owner/repo`.
+2. **Read the dashboard** — review health, activity, and engineering pulse.
+3. **Investigate contributors** — inspect contribution patterns and team signals.
+4. **Inspect code insights** — explore languages, file metrics, and complexity indicators.
+5. **Assess risk** — review the evidence and recommended priorities.
+6. **Compare and track** — compare repository profiles and use available historical snapshots.
 
-### 2️⃣ **View Executive Overview**
-- Head to the **Dashboard** for high-level insights
-- See key metrics: Stars, Forks, Issues, Health Score
-- Read intelligent trend analysis based on repository data
-
-### 3️⃣ **Explore Contributors**
-- Navigate to **Contributors** page
-- Discover top contributors and their activity
-- Understand team dynamics and contribution patterns
-
-### 4️⃣ **Analyze Code Quality**
-- Visit **Code Insights** for deep dives
-- Review language breakdown and repository health
-- Track issue and pull request activity
+Some code-level and predictive insights depend on a successful deep scan or sufficient historical data.
 
 ---
 
-## 🔑 Key Capabilities
+## ◈ Metrics at a glance
 
-### 🔄 Real-Time Data Integration
-- Live GitHub API queries for current repository state
-- Cross-page session state management
-- Automatic data caching within session
+| Signal | What it helps you understand |
+|---|---|
+| Stars & forks | Adoption and community interest |
+| Open issues & pull requests | Outstanding work and active collaboration |
+| Repository health | A normalized view of repository vitality |
+| Contributors | Breadth of participation |
+| Languages | Reported language composition |
+| Commit activity | Development cadence and momentum |
+| Engineering signals | Documentation, testing, and dependency-manifest presence |
+| Code complexity | Bounded indicators for files included in the scan |
 
-### 📊 Intelligent Batch Processing
-- Analyze **up to 10 repositories per session**
-- Session history with persistent analysis results
-- Efficient API rate limit management
-
-### ✅ Input Validation
-- Robust URL and repository format parsing
-- Automatic normalization of repository identifiers
-- Error handling for invalid repositories
-
-### 🎯 Smart Metrics
-- Adaptive health scoring based on multiple factors
-- Contributor velocity analysis
-- Issue resolution trend tracking
+**Compare like with like:** raw counts provide operational context, while normalized 0–100 dimensions are intended for more direct comparison.
 
 ---
 
-## 🌟 Example Workflows
+## ◈ Project structure
 
-### Evaluate an Open-Source Project
-1. Paste the repository URL in the Repository page
-2. Check the Executive Dashboard for quick overview
-3. Review contributors to assess team strength
-4. Inspect code insights for quality signals
+```text
+repopulse/
+├── app.py
+├── analysis/
+│   ├── repository_analysis.py
+│   ├── metrics.py
+│   └── code_analysis.py
+├── components/
+│   ├── boot.py
+│   ├── cards.py
+│   ├── charts.py
+│   ├── tables.py
+│   └── ui.py
+├── config/
+│   └── settings.py
+├── core/
+│   ├── github_client.py
+│   ├── models.py
+│   └── repository.py
+├── data/
+│   └── history.py
+├── pages/
+│   ├── dashboard.py
+│   ├── repository.py
+│   ├── contributors.py
+│   ├── code_insights.py
+│   ├── risk_center.py
+│   ├── assessment.py
+│   ├── compare.py
+│   └── predictive.py
+├── tests/
+├── assets/
+├── requirements.txt
+└── .env.example
+```
 
-### Track Team Performance
-1. Analyze your team's main repository
-2. Monitor contributor momentum on Contributors page
-3. Watch health metrics trend over time
-4. Use insights for sprint planning
-
-### Compare Multiple Repositories
-1. Analyze up to 10 repos in a single session
-2. Use session history to compare metrics
-3. Identify high-performing vs. struggling projects
-4. Make data-driven decisions
+*The tree highlights the main application areas; individual filenames may evolve as the project changes.*
 
 ---
 
-## 🧪 Testing
+## ◈ Testing
 
-Run the test suite to validate repository analysis logic:
+Run the project tests from the repository root:
+
+```bash
+pytest -q
+```
+
+Or run the analysis tests specifically:
 
 ```bash
 pytest tests/test_analysis.py -v
 ```
 
-Tests validate:
-- Repository input parsing and normalization
-- Batch processing with 10-repository cap
-- Analysis result generation and metrics computation
+Tests cover repository input parsing and analysis logic. The complete test suite should be run in an environment with all dependencies installed.
 
 ---
 
-## 📝 Environment Configuration
+## ◈ Configuration & performance
 
-Create a `.env` file in the `config/` directory:
+- Repository metadata, contributors, pull requests, issues, languages, commits, repository trees, and individual file contents use a **5-minute Streamlit cache**.
+- **Refresh live data** invalidates cached inputs for the selected repository while preserving historical snapshots.
+- Historical data is stored locally by the application. Do not include private tokens or sensitive repository information in public issue reports.
 
-```env
-GITHUB_TOKEN=your_personal_access_token_here
-GITHUB_API_BASE=https://api.github.com
-```
+### Environment variables
 
-**Get your GitHub token:**
-1. Go to [GitHub Settings → Developer settings → Personal access tokens](https://github.com/settings/tokens)
-2. Click "Generate new token"
-3. Select `public_repo` scope
-4. Copy and paste into `.env`
+| Variable | Purpose |
+|---|---|
+| `GITHUB_TOKEN` | Optional GitHub token for API access and higher rate limits |
+| `GITHUB_API_BASE_URL` | GitHub API base URL; defaults to `https://api.github.com` in the example configuration |
+| `APP_TITLE` | Application title |
 
----
-
-## 📊 Supported Metrics
-
-| Metric | Description |
-|--------|-------------|
-| **Stars** | Repository popularity and adoption |
-| **Forks** | Community interest and extension attempts |
-| **Open Issues** | Outstanding work and bug backlog |
-| **Health Score** | Overall repository vitality (0-100) |
-| **Contributors** | Team size and collaboration scope |
-| **Languages** | Technology stack breakdown |
-| **Commits** | Development activity and momentum |
-| **Pull Requests** | Ongoing development work |
+For a token, visit [GitHub personal access token settings](https://github.com/settings/tokens) and follow GitHub's current guidance for the repositories and access you need.
 
 ---
 
-## 🎨 UI/UX Highlights
+## ◈ Contributing
 
-✨ **Modern Dark Theme** with gradient backgrounds  
-🎯 **Intuitive Navigation** through collapsible sidebar  
-📱 **Responsive Design** adapting to all screen sizes  
-⚡ **Smooth Animations** for enhanced interactivity  
-🎭 **Color-Coded Metrics** for quick visual scanning  
+Contributions, bug reports, and thoughtful feature suggestions are welcome.
 
----
+1. Open an issue describing the bug or proposal.
+2. Keep changes focused and explain the reason for the change.
+3. Run relevant tests before submitting a pull request.
+4. Include screenshots for meaningful UI changes where possible.
 
-## 🤝 Contributing
+[Open an issue](https://github.com/arjunajithan04/repopulse/issues) · [View the repository](https://github.com/arjunajithan04/repopulse)
 
-Contributions are welcome! Feel free to:
-- Report bugs and issues
-- Suggest new features
-- Submit pull requests
-- Improve documentation
+## ◈ License
 
----
-
-## 📄 License
-
-This project is licensed under the MIT License - see LICENSE file for details.
-
----
-
-## 🙋 Support
-
-For questions, issues, or feature requests, please open an issue on [GitHub Issues](https://github.com/arjunajithan04/repopulse/issues).
+This project is licensed under the MIT License. See the `LICENSE` file for the complete terms.
 
 ---
 
 <div align="center">
 
+### Built for clearer repository decisions.
+
 **Made with ❤️ by Arjun Ajithan**
 
-[⭐ Star us on GitHub](https://github.com/arjunajithan04/repopulse)
+[⭐ Star RepoPulse](https://github.com/arjunajithan04/repopulse) · [Report a bug](https://github.com/arjunajithan04/repopulse/issues)
+
+<sub>Repository intelligence • Explainable risk • Engineering signals</sub>
 
 </div>
-
-## Repository Intelligence
-
-It extends the dynamic dashboard into an explainable repository intelligence product:
-
-- **Risk Center** — critical/high/medium risk signals derived from live repository metrics.
-- **Repository Assessment** — automated executive summary, strengths, priorities, and risk summary.
-- **What Changed** — compares the latest scan with the previous session snapshot.
-- **Trend Intelligence** — persistent health/development/community history with normalized community trends.
-- **Comparison 2.0** — repository-to-repository comparison with metric-specific leader semantics.
-- **Live API telemetry** — API rate-limit information remains visible after scans.
-- **No extra runtime dependencies** — uses the existing Streamlit/Pandas stack.
-
-### Important interpretation note
-
-The assessment and risk engine are **rule-based and explainable**, not an external LLM. Every insight can be traced to RepoPulse's measured metrics and configured thresholds. Code quality indicators remain bounded/heuristic where language-specific AST parsing is unavailable.
-
-## 🧠 Intelligence
-
-RepoPulse now adds an engineering and performance intelligence layer:
-
-- Cached GitHub requests with a short TTL and explicit live-refresh invalidation
-- Repository tree inventory on every analysis
-- Commit activity intelligence: active days, recent-vs-previous 30-day trend, last commit age, and activity status
-- Engineering intelligence for documentation, testing, and dependency manifests
-- Dependency manifest inspection for common ecosystems without claiming vulnerability results
-- Testing signals based on repository test-file structure
-- Documentation signals for README, LICENSE, CONTRIBUTING, and docs directories
-- Engineering pulse surfaced on the Repository and Dashboard pages
-- New risk signals for stale activity, declining commits, limited testing, and weak documentation
-- Historical snapshots now retain engineering, documentation, testing, and dependency indicators
-
-### Performance behavior
-
-Repository metadata, contributors, pull requests, issues, languages, commits, repository trees, and individual file contents use a 5-minute Streamlit cache. Selecting **Refresh live data** invalidates the cached inputs for that repository while preserving historical snapshots.

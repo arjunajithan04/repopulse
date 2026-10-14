@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="430" viewBox="0 0 1200 430" role="img" aria-labelledby="title desc">
+  <title id="title">RepoPulse — GitHub Repository Intelligence</title>
+  <desc id="desc">A dark indigo and violet glass-inspired hero banner for RepoPulse.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#080a14"/>
+      <stop offset=".52" stop-color="#11132b"/>
+      <stop offset="1" stop-color="#090d19"/>
+    </linearGradient>
+    <radialGradient id="glowA">
+      <stop offset="0" stop-color="#8b5cf6" stop-opacity=".48"/>
+      <stop offset="1" stop-color="#8b5cf6" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glowB">
+      <stop offset="0" stop-color="#4f46e5" stop-opacity=".38"/>
+      <stop offset="1" stop-color="#4f46e5" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="glass" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity=".12"/>
+      <stop offset="1" stop-color="#b9a6ff" stop-opacity=".025"/>
+    </linearGradient>
+    <linearGradient id="line" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#a78bfa"/>
+      <stop offset="1" stop-color="#6366f1"/>
+    </linearGradient>
+    <filter id="blur"><feGaussianBlur stdDeviation="35"/></filter>
+  </defs>
+  <rect width="1200" height="430" rx="26" fill="url(#bg)"/>
+  <ellipse cx="930" cy="90" rx="300" ry="200" fill="url(#glowA)" filter="url(#blur)"/>
+  <ellipse cx="260" cy="420" rx="300" ry="210" fill="url(#glowB)" filter="url(#blur)"/>
+  <g opacity=".16" stroke="#a5b4fc" stroke-width="1">
+    <path d="M0 80H1200M0 140H1200M0 200H1200M0 260H1200M0 320H1200M0 380H1200"/>
+    <path d="M100 0V430M220 0V430M340 0V430M460 0V430M580 0V430M700 0V430M820 0V430M940 0V430M1060 0V430M1180 0V430"/>
+  </g>
+  <rect x="48" y="40" width="1104" height="350" rx="24" fill="url(#glass)" stroke="#c4b5fd" stroke-opacity=".23"/>
+  <rect x="70" y="63" width="8" height="8" rx="4" fill="#a78bfa"/>
+  <rect x="84" y="63" width="8" height="8" rx="4" fill="#818cf8" opacity=".75"/>
+  <rect x="98" y="63" width="8" height="8" rx="4" fill="#c4b5fd" opacity=".55"/>
+  <text x="78" y="148" fill="#c4b5fd" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="14" font-weight="700" letter-spacing="4">GITHUB REPOSITORY INTELLIGENCE</text>
+  <text x="74" y="220" fill="#ffffff" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="66" font-weight="800" letter-spacing="-2">RepoPulse</text>
+  <rect x="78" y="244" width="118" height="4" rx="2" fill="url(#line)"/>
+  <text x="78" y="284" fill="#d9dced" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="22" font-weight="500">See the signals. Understand the risk.</text>
+  <text x="78" y="316" fill="#9ba4bd" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="16">Repository health · Contributor dynamics · Engineering quality</text>
+  <g transform="translate(855 112)">
+    <circle cx="110" cy="95" r="94" fill="#8b5cf6" fill-opacity=".045" stroke="#a78bfa" stroke-opacity=".32"/>
+    <circle cx="110" cy="95" r="72" fill="none" stroke="#818cf8" stroke-opacity=".45" stroke-dasharray="5 8"/>
+    <circle cx="110" cy="95" r="48" fill="url(#glass)" stroke="#c4b5fd" stroke-opacity=".6"/>
+    <path d="M77 101 L96 120 L143 69" fill="none" stroke="#c4b5fd" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="110" cy="1" r="5" fill="#c4b5fd"/>
+    <circle cx="204" cy="95" r="4" fill="#818cf8"/>
+    <circle cx="31" cy="154" r="4" fill="#a78bfa"/>
+  </g>
+  <g transform="translate(785 300)">
+    <rect width="300" height="54" rx="13" fill="#11162a" fill-opacity=".75" stroke="#a78bfa" stroke-opacity=".28"/>
+    <circle cx="24" cy="27" r="5" fill="#a78bfa"/>
+    <text x="39" y="23" fill="#e9e7ff" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="11" font-weight="700" letter-spacing="1.4">WHAT → WHY → NOW WHAT</text>
+    <text x="39" y="40" fill="#8994ae" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="10">Explainable insights for better decisions</text>
+  </g>
+  <text x="78" y="365" fill="#7f89a3" font-family="Inter,Segoe UI,Arial,sans-serif" font-size="11" letter-spacing="1.4">STREAMLIT  /  PYTHON  /  GITHUB REST API</text>
+</svg>
