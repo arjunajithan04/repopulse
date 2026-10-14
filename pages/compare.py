@@ -266,6 +266,7 @@ def compare_page() -> None:
     st.markdown('<div class="compare-kicker">Repository intelligence / comparison</div>', unsafe_allow_html=True)
     st.markdown('<div class="compare-title">Compare repositories</div>', unsafe_allow_html=True)
     st.markdown('<div class="compare-copy">Compare repository health, activity and engineering maturity without mixing incomparable raw scales.</div>', unsafe_allow_html=True)
+    st.caption("Raw repository counts provide context; normalized intelligence dimensions are better suited to direct comparison.")
 
     snapshots = st.session_state.get("repo_snapshots", {}) or {}
     history = [name for name in st.session_state.get("repo_session_history", []) if name]
@@ -293,7 +294,7 @@ def compare_page() -> None:
         target = (target or "").strip()
         if not target:
             st.error("Enter a second GitHub repository to compare.")
-        elif target == current_name:
+        elif target.casefold().rstrip("/") == current_name.casefold().rstrip("/"):
             st.warning("Choose a different repository for comparison.")
         else:
             with st.spinner("Building comparison profile…"):

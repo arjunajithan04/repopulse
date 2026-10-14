@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 
 import streamlit as st
 
+from components.cards import metric_card
 from analysis.code_analysis import analyze_files
 from analysis.engineering import analyze_engineering
 from analysis.repository_analysis import analyze_repository, parse_repository_input
@@ -155,7 +156,7 @@ def _render_history(repo_name: str):
 def repository_page():
     init_db()
     st.subheader("Repository overview", divider="blue")
-    st.caption("Analyze a GitHub repository and build a cached, evidence-based intelligence profile.")
+    st.caption("Inspect repository scale, engineering signals, activity, and persistent scan history.")
 
     st.session_state.setdefault("repo_session_count", 0)
     st.session_state.setdefault("repo_session_history", [])
@@ -286,22 +287,35 @@ def run_active_scan():
     metrics = analysis.metrics or {}
     engineering = metrics.get("engineering_intelligence", {}) or {}
     c1, c2, c3, c4 = st.columns(4)
-    c1.metric("Stars", f"{repo.stars:,}")
-    c2.metric("Forks", f"{repo.forks:,}")
-    c3.metric("Recent commits", f"{metrics.get('recent_commit_count', 0):,}")
-    c4.metric("Health", f"{metrics.get('repository_health_score', 0):.1f}/100")
+    with c1:
+        metric_card("Stars", f"{repo.stars:,}", help_text="GitHub stars at the time of this scan", icon="★")
+    with c2:
+        metric_card("Forks", f"{repo.forks:,}", help_text="Public forks reported by GitHub", icon="⑂")
+    with c3:
+        metric_card("Recent commits", f"{metrics.get('recent_commit_count', 0):,}", help_text="Commits observed in the analysis window", icon="↗")
+    with c4:
+        health = float(metrics.get("repository_health_score", 0) or 0)
+        metric_card("Repository health", f"{health:.1f}/100", help_text="RepoPulse's composite repository health signal",
+                    variant="good" if health >= 80 else "bad" if health < 60 else "neutral", icon="◉", progress=health)
 
     st.markdown("### Engineering pulse")
     e1, e2, e3, e4 = st.columns(4)
-    e1.metric("Engineering", f"{engineering.get('engineering_score', 0):.1f}/100")
-    e2.metric("Documentation", f"{engineering.get('documentation_score', 0):.1f}/100")
-    e3.metric("Testing", f"{engineering.get('testing_score', 0):.1f}/100")
-    e4.metric("Dependencies", f"{engineering.get('dependencies_observed', 0):,}")
+    with e1:
+        metric_card("Engineering", f"{engineering.get('engineering_score', 0):.1f}/100", help_text="Structural engineering signals", icon="⌘",
+                    progress=engineering.get("engineering_score", 0))
+    with e2:
+        metric_card("Documentation", f"{engineering.get('documentation_score', 0):.1f}/100", help_text="Repository documentation signals", icon="▤",
+                    progress=engineering.get("documentation_score", 0))
+    with e3:
+        metric_card("Testing", f"{engineering.get('testing_score', 0):.1f}/100", help_text="Observed testing structure; not runtime coverage", icon="✓",
+                    progress=engineering.get("testing_score", 0))
+    with e4:
+        metric_card("Dependencies", f"{engineering.get('dependencies_observed', 0):,}", help_text="Dependencies observed in scanned manifests", icon="◇")
 
     left, right = st.columns([1.15, 1])
     with left:
         st.markdown("### Repository profile")
-        st.markdown(repo.description or "No repository description provided.")
+        st.markdown(repo.description or "_No repository description provided._")
         profile = [
             {"Field": "Repository", "Value": repo.full_name or repo.name},
             {"Field": "Default branch", "Value": repo.default_branch or "N/A"},
@@ -310,13 +324,17 @@ def run_active_scan():
             {"Field": "Contributors", "Value": metrics.get("total_contributors", 0)},
             {"Field": "Bus factor", "Value": metrics.get("bus_factor", 0)},
         ]
-        st.dataframe(profile, use_container_width=True, hide_index=True)
+        st.dataframe(profile, use_container_width=True, hide_index=True, column_config={
+            "Field": st.column_config.TextColumn("Field", width="medium"),
+            "Value": st.column_config.TextColumn("Value", width="large"),
+        })
     with right:
         st.markdown("### Activity intelligence")
         activity = metrics.get("activity_intelligence", {}) or {}
-        st.metric("Activity status", activity.get("status", "Unknown"))
-        trend = activity.get("commit_trend_pct", 0)
-        st.metric("30-day commit trend", f"{trend:+.1f}%")
+        activity_status = activity.get("status", "Unknown")
+        st.markdown(f"**Activity status:** {activity_status}")
+        trend = float(activity.get("commit_trend_pct", 0) or 0)
+        st.metric("30-day commit trend", f"{trend:+.1f}%", delta_color="normal")
         st.caption(f"Last commit: {activity.get('last_commit_days_ago', 0)} days ago · {activity.get('active_days', 0)} active days observed")
         if activity.get("peak_commit_weekday"):
             st.caption(f"Peak commit weekday: {activity['peak_commit_weekday']}")

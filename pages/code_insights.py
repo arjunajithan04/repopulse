@@ -3,6 +3,8 @@ from __future__ import annotations
 import pandas as pd
 import streamlit as st
 
+from components.cards import metric_card
+from components.charts import render_language_donut, render_health_radar
 from components.interaction import get_focus, set_focus
 
 try:
@@ -36,7 +38,8 @@ def _render_codebase_map(df: pd.DataFrame):
 
 
 def code_insights_page():
-    st.subheader("Code insights", divider="orange")
+    st.subheader("Code insights", divider="blue")
+    st.caption("Explore language composition, structural complexity, and repository-level quality signals.")
     analysis = st.session_state.get("repo_analysis")
     if analysis is None:
         st.info("Analyze a repository from the Repository page to populate code quality insights.")
@@ -50,25 +53,45 @@ def code_insights_page():
         total_bytes = sum(languages.values()) or 1
         lang_rows = [{"Language": lang, "Share": round(size / total_bytes * 100, 1), "Bytes": size} for lang, size in sorted(languages.items(), key=lambda x: x[1], reverse=True)]
         st.markdown("### Language profile")
-        st.bar_chart(pd.DataFrame(lang_rows).head(10), x="Language", y="Share", use_container_width=True)
+        st.caption("Share is calculated from the byte counts reported by GitHub, not from file count or lines of code.")
+        render_language_donut(pd.DataFrame(lang_rows).head(10), height=320)
+    else:
+        st.info("GitHub did not return language composition data for this repository.")
 
     if code:
         score = float(code.get("quality_score", 0) or 0)
         status = _quality_label(score)
         st.markdown("### Codebase health")
         a, b, c, d = st.columns(4)
-        a.metric("Quality score", f"{score:.0f}/100")
-        b.metric("Files analyzed", code.get("files_analyzed", 0))
-        b.caption("bounded source scan")
-        c.metric("Lines", f"{code.get('total_lines', 0):,}")
-        d.metric("Avg complexity", code.get("avg_complexity", 0))
-        st.progress(max(0, min(100, int(score))) / 100, text=f"{status} · {score:.0f}/100")
+        with a:
+            metric_card("Code quality", f"{score:.0f}/100", help_text=status, icon="◉",
+                        variant="good" if score >= 80 else "bad" if score < 60 else "neutral",
+                        progress=score)
+        with b:
+            metric_card("Files analyzed", f"{int(code.get('files_analyzed', 0) or 0):,}",
+                        help_text="Bounded source scan", icon="▤")
+        with c:
+            metric_card("Lines of code", f"{int(code.get('total_lines', 0) or 0):,}",
+                        help_text="Lines observed in analyzed files", icon="≡")
+        with d:
+            complexity = float(code.get("avg_complexity", 0) or 0)
+            metric_card("Average complexity", f"{complexity:.1f}",
+                        help_text="Average measured per-file complexity", icon="⌘",
+                        variant="bad" if complexity >= 10 else "neutral")
         st.caption(f"{code.get('files_analyzed_with_ast', 0)} AST-analyzed files · {code.get('files_analyzed_with_heuristics', 0)} heuristic-analyzed files")
 
         q1, q2, q3 = st.columns(3)
-        q1.metric("Functions", code.get("functions", 0))
-        q2.metric("Classes", code.get("classes", 0))
-        q3.metric("Comment ratio", f"{code.get('comment_ratio', 0):.1f}%")
+        with q1:
+            metric_card("Functions", f"{int(code.get('functions', 0) or 0):,}",
+                        help_text="Functions detected in the bounded scan", icon="ƒ")
+        with q2:
+            metric_card("Classes", f"{int(code.get('classes', 0) or 0):,}",
+                        help_text="Classes detected in the bounded scan", icon="▦")
+        with q3:
+            comment_ratio = float(code.get("comment_ratio", 0) or 0)
+            metric_card("Comment ratio", f"{comment_ratio:.1f}%",
+                        help_text="Comment lines relative to scanned source", icon="¶",
+                        variant="bad" if comment_ratio < 10 else "neutral")
 
         flags = code.get("flags", [])
         if flags:
@@ -142,8 +165,9 @@ def code_insights_page():
     st.markdown("### Repository-level quality signals")
     dimensions = metrics.get("health_dimensions", {})
     if dimensions:
-        rows = [{"Dimension": key.replace("_", " ").title(), "Score": value} for key, value in dimensions.items()]
-        st.bar_chart(pd.DataFrame(rows), x="Dimension", y="Score", use_container_width=True)
+        render_health_radar({key.replace("_", " ").title(): float(value or 0) for key, value in dimensions.items()}, height=340)
+    else:
+        st.info("Repository health dimensions are not available for this scan.")
 
     st.markdown("### Recommendations")
     recommendations = []
